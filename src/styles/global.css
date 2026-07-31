@@ -533,6 +533,55 @@ textarea {
     transform: rotate(360deg);
   }
 }
+.skeleton {
+  background: var(--g2);
+  border-radius: 6px;
+  position: relative;
+  overflow: hidden;
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+  transform: translateX(-100%);
+  animation: shimmer 1.4s infinite;
+}
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+.skel-card {
+  background: #fff;
+  border: 1px solid var(--g3);
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.skel-card-img {
+  height: 140px;
+  flex-shrink: 0;
+}
+.skel-card-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+.skel-line {
+  height: 14px;
+}
+.skel-line-sm {
+  height: 11px;
+  width: 60%;
+}
+.skel-line-xs {
+  height: 11px;
+  width: 40%;
+}
 .empty-state {
   text-align: center;
   padding: 48px 24px;

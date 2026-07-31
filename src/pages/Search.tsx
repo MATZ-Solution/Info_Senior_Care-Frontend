@@ -5,7 +5,7 @@ import type { FacilityCard, PaginatedFacilities } from "../lib/types";
 import { CARE_TYPES } from "../lib/careTypes";
 import FacilityCardView from "../components/FacilityCardView";
 import SearchAutocomplete from "../components/SearchAutocomplete";
-import { EmptyState, ErrorBanner, Spinner } from "../components/Feedback";
+import { EmptyState, ErrorBanner, SearchSkeleton } from "../components/Feedback";
 import { useAuth } from "../lib/auth";
 
 const PAGE_SIZE = 12;
@@ -200,7 +200,7 @@ export default function Search() {
             </div>
 
             {error && <ErrorBanner message={error} />}
-            {loading && <Spinner />}
+            {loading && <SearchSkeleton count={6} />}
             {!loading && result && result.items.length === 0 && (
               <EmptyState title="No facilities matched your search" hint="Try a broader location or clearing filters." />
             )}

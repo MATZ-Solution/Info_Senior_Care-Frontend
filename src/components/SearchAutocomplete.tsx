@@ -23,6 +23,7 @@ interface Props {
 export default function SearchAutocomplete({ value, onChange, onSubmit, placeholder, inputStyle }: Props) {
   const [suggestions, setSuggestions] = useState<FacilitySuggestItem[]>([]);
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -35,12 +36,15 @@ export default function SearchAutocomplete({ value, onChange, onSubmit, placehol
 
     if (q.length < MIN_QUERY_LENGTH) {
       setSuggestions([]);
+      setLoading(false);
       setOpen(false);
       return;
     }
 
     const requestId = ++requestIdRef.current;
     debounceRef.current = setTimeout(() => {
+      setLoading(true);
+      setOpen(true);
       facilitiesApi
         .suggest(q, 6)
         .then((items) => {
@@ -53,6 +57,10 @@ export default function SearchAutocomplete({ value, onChange, onSubmit, placehol
           if (requestId !== requestIdRef.current) return;
           setSuggestions([]);
           setOpen(false);
+        })
+        .finally(() => {
+          if (requestId !== requestIdRef.current) return;
+          setLoading(false);
         });
     }, DEBOUNCE_MS);
 
@@ -104,7 +112,7 @@ export default function SearchAutocomplete({ value, onChange, onSubmit, placehol
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        onFocus={() => suggestions.length > 0 && setOpen(true)}
+        onFocus={() => (suggestions.length > 0 || loading) && setOpen(true)}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         style={inputStyle}
@@ -129,7 +137,17 @@ export default function SearchAutocomplete({ value, onChange, onSubmit, placehol
             textAlign: "left",
           }}
         >
-          {suggestions.map((s, i) => (
+          {loading && (
+            <>
+              {Array.from({ length: 3 }, (_, i) => (
+                <div key={`skeleton-${i}`} style={{ padding: "10px 16px" }}>
+                  <div className="skeleton" style={{ height: 14, width: "70%", marginBottom: 8 }} />
+                  <div className="skeleton" style={{ height: 11, width: "45%" }} />
+                </div>
+              ))}
+            </>
+          )}
+          {!loading && suggestions.map((s, i) => (
             <div
               key={s.id}
               onMouseDown={(e) => {

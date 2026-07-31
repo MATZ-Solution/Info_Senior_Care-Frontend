@@ -20,6 +20,23 @@ export function InfoBanner({ children }: { children: React.ReactNode }) {
   );
 }
 
+export function SearchSkeleton({ count = 6 }: { count?: number }) {
+  return (
+    <div className="grid-3" role="status" aria-label="Loading search results">
+      {Array.from({ length: count }, (_, i) => (
+        <div key={i} className="skel-card">
+          <div className="skel-card-img skeleton" />
+          <div className="skel-card-body">
+            <div className="skeleton skel-line" />
+            <div className="skeleton skel-line-sm" />
+            <div className="skeleton skel-line-xs" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function EmptyState({ title, hint }: { title: string; hint?: string }) {
   return (
     <div className="empty-state">
