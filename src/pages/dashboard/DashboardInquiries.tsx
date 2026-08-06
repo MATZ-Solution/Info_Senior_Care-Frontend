@@ -32,7 +32,7 @@ export default function DashboardInquiries() {
 
   return (
     <div>
-      <h1 style={{ fontFamily: "Georgia, serif", fontSize: 26, color: "var(--navy)", marginBottom: 24 }}>Inquiries</h1>
+      <h1 style={{ fontSize: 26, marginBottom: 24 }}>Inquiries</h1>
       {inquiries === null && <Spinner />}
       {inquiries && inquiries.length === 0 && <EmptyState title="No inquiries sent yet" hint="Request info from a facility page to see it here." />}
       {inquiries &&

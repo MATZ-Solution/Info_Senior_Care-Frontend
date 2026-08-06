@@ -63,15 +63,15 @@ export default function Auth() {
 
   return (
     <div style={{ minHeight: "calc(100vh - 64px)", display: "grid", gridTemplateColumns: "1fr 1fr" }} className="auth-grid">
-      <div style={{ background: "linear-gradient(135deg,#0A5C4E,#0D7D6B)", padding: "60px 48px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-        <div style={{ fontFamily: "Georgia, serif", fontSize: 22, color: "#fff", display: "flex", alignItems: "center", gap: 10, marginBottom: 40 }}>
-          <span style={{ width: 34, height: 34, background: "rgba(255,255,255,0.2)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>🌿</span>
+      <div style={{ background: "var(--grad-brand)", padding: "60px 48px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", display: "flex", alignItems: "center", gap: 10, marginBottom: 40, letterSpacing: "-0.02em" }}>
+          <span style={{ width: 36, height: 36, background: "rgba(255,255,255,0.18)", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 11, display: "flex", alignItems: "center", justifyContent: "center" }}>🌿</span>
           InfoSenior.care
         </div>
-        <h1 style={{ fontFamily: "Georgia, serif", fontSize: 32, color: "#fff", lineHeight: 1.25, marginBottom: 16 }}>
+        <h1 style={{ fontSize: 32, color: "#fff", lineHeight: 1.25, marginBottom: 16 }}>
           Your AI companion for senior care
         </h1>
-        <p style={{ fontSize: 15, color: "rgba(255,255,255,0.75)", lineHeight: 1.7 }}>
+        <p style={{ fontSize: 15, color: "rgba(255,255,255,0.78)", lineHeight: 1.7 }}>
           Infomary helps families find the right care for their loved ones — with empathy, intelligence, and zero
           sales pressure.
         </p>
@@ -93,7 +93,7 @@ export default function Auth() {
           </div>
         </div>
 
-        <h2 style={{ fontFamily: "Georgia, serif", fontSize: 24, color: "var(--navy)", marginBottom: 6 }}>
+        <h2 style={{ fontSize: 24, marginBottom: 6 }}>
           {tab === "signin" ? "Welcome back" : "Create your account"}
         </h2>
         <p style={{ fontSize: 14, color: "var(--muted)", marginBottom: 24 }}>

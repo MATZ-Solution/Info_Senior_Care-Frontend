@@ -24,7 +24,7 @@ export default function DashboardSaved() {
 
   return (
     <div>
-      <h1 style={{ fontFamily: "Georgia, serif", fontSize: 26, color: "var(--navy)", marginBottom: 24 }}>Saved facilities</h1>
+      <h1 style={{ fontSize: 26, marginBottom: 24 }}>Saved facilities</h1>
       {items === null && <Spinner />}
       {items && items.length === 0 && <EmptyState title="No saved facilities yet" hint="Browse search results and tap the heart icon to save one." />}
       {items && items.length > 0 && (

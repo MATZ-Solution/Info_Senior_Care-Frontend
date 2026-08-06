@@ -31,7 +31,7 @@ export default function DashboardOverview() {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28, flexWrap: "wrap", gap: 12 }}>
-        <h1 style={{ fontFamily: "Georgia, serif", fontSize: 26, color: "var(--navy)" }}>
+        <h1 style={{ fontSize: 26 }}>
           Welcome back{profile?.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""} 👋
         </h1>
         <Link to="/chat" className="btn btn-primary">
@@ -105,7 +105,7 @@ export default function DashboardOverview() {
             inquiries.slice(0, 3).map((i) => (
               <div key={i.id} style={{ padding: "10px 0", borderBottom: "1px solid var(--g2)" }}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <Link to={`/facilities/${i.facility_id}`} style={{ fontSize: 13, fontWeight: 600, color: "var(--navy)" }}>
+                  <Link to={`/facilities/${i.facility_id}`} style={{ fontSize: 13, fontWeight: 700, color: "var(--navy)" }}>
                     View facility
                   </Link>
                   <span className="pill pill-teal">{i.status}</span>
@@ -126,11 +126,11 @@ export default function DashboardOverview() {
 
 function StatCard({ label, value, accent, link }: { label: string; value: string | number; accent?: boolean; link?: { to: string; label: string } }) {
   return (
-    <div className="card card-p" style={accent ? { background: "var(--tl)", border: "1px solid var(--tm)" } : undefined}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 700, color: "var(--navy)" }}>{value}</div>
+    <div className={`stat-card${accent ? " accent" : ""}`}>
+      <div className="stat-label">{label}</div>
+      <div className="stat-value">{value}</div>
       {link && (
-        <Link to={link.to} style={{ fontSize: 12, color: "var(--teal)", fontWeight: 600, marginTop: 4, display: "inline-block" }}>
+        <Link to={link.to} style={{ fontSize: 12, color: "var(--teal)", fontWeight: 700, marginTop: 4, display: "inline-block" }}>
           {link.label}
         </Link>
       )}
@@ -140,9 +140,9 @@ function StatCard({ label, value, accent, link }: { label: string; value: string
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--g2)", fontSize: 13 }}>
-      <span style={{ color: "var(--muted)" }}>{label}</span>
-      <span style={{ fontWeight: 700, color: "var(--navy)" }}>{value}</span>
+    <div className="info-row">
+      <span className="k">{label}</span>
+      <span className="v">{value}</span>
     </div>
   );
 }

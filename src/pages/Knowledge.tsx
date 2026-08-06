@@ -40,10 +40,10 @@ export default function Knowledge() {
 
   return (
     <div>
-      <div style={{ background: "var(--navy)", padding: "48px 0" }}>
+      <div style={{ background: "var(--grad-brand)", padding: "52px 0" }}>
         <div className="container center">
-          <h1 style={{ fontFamily: "Georgia, serif", fontSize: 36, color: "#fff", marginBottom: 12 }}>Knowledge Center</h1>
-          <p style={{ fontSize: 16, color: "rgba(255,255,255,0.7)" }}>Guides on senior care topics, written for families.</p>
+          <h1 style={{ fontSize: 36, color: "#fff", marginBottom: 12 }}>Knowledge Center</h1>
+          <p style={{ fontSize: 16, color: "rgba(255,255,255,0.75)" }}>Guides on senior care topics, written for families.</p>
         </div>
       </div>
 

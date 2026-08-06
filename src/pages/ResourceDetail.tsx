@@ -63,7 +63,7 @@ export default function ResourceDetail() {
             {resource.category && ` / ${resource.category}`}
           </div>
           {resource.category && <span className="pill pill-blue" style={{ marginBottom: 16, display: "inline-block" }}>{resource.category}</span>}
-          <h1 style={{ fontFamily: "Georgia, serif", fontSize: 34, color: "var(--navy)", marginBottom: 16, lineHeight: 1.25 }}>{resource.title}</h1>
+          <h1 style={{ fontSize: 34, marginBottom: 16, lineHeight: 1.25 }}>{resource.title}</h1>
           <div style={{ fontSize: 13, color: "var(--muted)", paddingBottom: 16, borderBottom: "1px solid var(--g2)", marginBottom: 28 }}>
             Published {new Date(resource.created_at).toLocaleDateString()}
           </div>
@@ -75,7 +75,7 @@ export default function ResourceDetail() {
         </div>
 
         {related.length > 0 && (
-          <div style={{ background: "#fff", border: "1px solid var(--g3)", borderRadius: 14, padding: 20 }}>
+          <div className="card card-p">
             <div style={{ fontSize: 13, fontWeight: 700, color: "var(--navy)", marginBottom: 14 }}>Related articles</div>
             {related.map((r) => (
               <Link

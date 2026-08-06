@@ -7,6 +7,15 @@ import FacilityCardView from "../components/FacilityCardView";
 import SearchAutocomplete from "../components/SearchAutocomplete";
 import { Spinner } from "../components/Feedback";
 
+// Per-card icon tints, mirroring the mobile app's quick-action / resource rows
+// (theme/colors.js tint + fg pairs) rather than one flat accent for every card.
+const CARE_TINTS = [
+  { bg: "var(--primary-tint)", fg: "var(--primary)" },
+  { bg: "var(--secondary-tint)", fg: "var(--secondary-dark)" },
+  { bg: "var(--accent-tint)", fg: "var(--accent)" },
+  { bg: "var(--success-tint)", fg: "var(--success-dark)" },
+];
+
 export default function Home() {
   const navigate = useNavigate();
   const [locationQuery, setLocationQuery] = useState("");
@@ -38,28 +47,29 @@ export default function Home() {
   return (
     <div>
       {/* HERO */}
-      <div style={{ background: "linear-gradient(135deg,#0A5C4E 0%,#0D7D6B 60%,#0F9580 100%)", padding: "72px 0" }}>
-        <div className="container">
+      <div style={{ background: "var(--grad-brand)", padding: "84px 0", position: "relative", overflow: "hidden" }}>
+        <div className="container" style={{ position: "relative" }}>
           <div style={{ maxWidth: 640 }}>
             <div
               style={{
                 background: "rgba(255,255,255,0.15)",
+                border: "1px solid rgba(255,255,255,0.22)",
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 8,
-                padding: "6px 14px",
-                borderRadius: 20,
-                marginBottom: 22,
+                padding: "7px 16px",
+                borderRadius: 999,
+                marginBottom: 24,
               }}
             >
-              <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.9)" }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.92)" }}>
                 🌿 Powered by Infomary — Your AI Care Companion
               </span>
             </div>
-            <h1 style={{ fontFamily: "Georgia, serif", fontSize: 46, color: "#fff", lineHeight: 1.15, marginBottom: 20 }}>
+            <h1 style={{ fontSize: 48, color: "#fff", lineHeight: 1.12, marginBottom: 20, letterSpacing: "-0.03em" }}>
               Finding the right senior care starts here
             </h1>
-            <p style={{ fontSize: 18, color: "rgba(255,255,255,0.8)", lineHeight: 1.6, marginBottom: 32 }}>
+            <p style={{ fontSize: 18, color: "rgba(255,255,255,0.82)", lineHeight: 1.6, marginBottom: 32 }}>
               Infomary is an AI companion who understands your situation, asks the right questions, and helps you find
               senior care options — free for families, always.
             </p>
@@ -67,15 +77,16 @@ export default function Home() {
               onSubmit={handleSearch}
               style={{
                 background: "#fff",
-                borderRadius: 14,
+                borderRadius: 18,
                 padding: 8,
                 display: "flex",
                 gap: 8,
                 maxWidth: 520,
-                boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
+                boxShadow: "var(--shadow-float)",
+                flexWrap: "wrap",
               }}
             >
-              <div style={{ flex: 1, display: "flex", gap: 8, alignItems: "center", padding: "8px 14px", background: "var(--g1)", borderRadius: 10 }}>
+              <div style={{ flex: 1, minWidth: 180, display: "flex", gap: 8, alignItems: "center", padding: "8px 14px", background: "var(--g1)", borderRadius: 12 }}>
                 <span>📍</span>
                 <SearchAutocomplete
                   value={locationQuery}
@@ -89,11 +100,19 @@ export default function Home() {
                 Search
               </button>
             </form>
-            <div style={{ display: "flex", gap: 16, marginTop: 16, flexWrap: "wrap" }}>
-              <Link to="/chat" className="btn" style={{ background: "rgba(255,255,255,0.15)", color: "#fff", padding: "10px 18px" }}>
+            <div style={{ display: "flex", gap: 12, marginTop: 18, flexWrap: "wrap" }}>
+              <Link
+                to="/chat"
+                className="btn"
+                style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.25)", color: "#fff", padding: "10px 18px" }}
+              >
                 🌿 Ask Infomary instead
               </Link>
-              <Link to="/assessment" className="btn" style={{ background: "rgba(255,255,255,0.15)", color: "#fff", padding: "10px 18px" }}>
+              <Link
+                to="/assessment"
+                className="btn"
+                style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.25)", color: "#fff", padding: "10px 18px" }}
+              >
                 Take the 5-question care quiz
               </Link>
             </div>
@@ -111,41 +130,39 @@ export default function Home() {
             </p>
           </div>
           <div className="grid-3" style={{ gap: 20 }}>
-            {CARE_TYPES.map((ct) => (
-              <div
-                key={ct.category}
-                onClick={() => navigate(`/search?facility_type_category=${encodeURIComponent(ct.category)}`)}
-                style={{ background: "#fff", border: "1px solid var(--g3)", borderRadius: 16, padding: 24, cursor: "pointer", borderTop: "4px solid var(--teal)" }}
-              >
-                <div style={{ fontSize: 32, marginBottom: 12 }}>{ct.icon}</div>
-                <div style={{ fontSize: 17, fontWeight: 700, color: "var(--navy)", marginBottom: 6 }}>{ct.label}</div>
-                <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.6, marginBottom: 14 }}>{ct.blurb}</div>
-                <span style={{ fontSize: 13, color: "var(--teal)", fontWeight: 600 }}>Browse facilities →</span>
+            {CARE_TYPES.map((ct, i) => {
+              const tint = CARE_TINTS[i % CARE_TINTS.length];
+              return (
+                <div
+                  key={ct.category}
+                  onClick={() => navigate(`/search?facility_type_category=${encodeURIComponent(ct.category)}`)}
+                  className="care-card"
+                >
+                  <div className="care-icon" style={{ background: tint.bg }}>
+                    <span>{ct.icon}</span>
+                  </div>
+                  <div className="care-title">{ct.label}</div>
+                  <div className="care-blurb">{ct.blurb}</div>
+                  <span className="care-link" style={{ color: tint.fg }}>
+                    Browse facilities →
+                  </span>
+                </div>
+              );
+            })}
+
+            {/* Infomary always gets the signature brand-gradient treatment. */}
+            <div onClick={() => navigate("/assessment")} className="care-card care-card-infomary">
+              <div className="infomary-orb">🌿</div>
+              <div className="care-title" style={{ color: "#fff" }}>
+                Not sure? Ask Infomary
               </div>
-            ))}
-            <div
-              onClick={() => navigate("/assessment")}
-              style={{
-                background: "var(--tl)",
-                border: "2px solid var(--teal)",
-                borderRadius: 16,
-                padding: 24,
-                cursor: "pointer",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-                alignItems: "center",
-                textAlign: "center",
-              }}
-            >
-              <div style={{ fontSize: 32, marginBottom: 12 }}>🌿</div>
-              <div style={{ fontSize: 17, fontWeight: 700, color: "var(--teal)", marginBottom: 8 }}>Not sure? Ask Infomary</div>
-              <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5 }}>
+              <div className="care-blurb" style={{ color: "rgba(255,255,255,0.78)" }}>
                 Answer a few questions and get a recommended care type.
               </div>
-              <button className="btn btn-primary btn-sm" style={{ marginTop: 16 }}>
+              <span className="infomary-cta">
                 Start the assessment
-              </button>
+                <span aria-hidden="true">→</span>
+              </span>
             </div>
           </div>
         </div>
@@ -172,7 +189,7 @@ export default function Home() {
                   style={{
                     width: 80,
                     height: 80,
-                    background: "var(--tl)",
+                    background: "var(--grad-brand-soft)",
                     borderRadius: "50%",
                     display: "flex",
                     alignItems: "center",
@@ -180,7 +197,7 @@ export default function Home() {
                     margin: "0 auto 20px",
                     fontSize: 32,
                     border: "4px solid #fff",
-                    boxShadow: "0 0 0 2px var(--teal)",
+                    boxShadow: "var(--shadow-primary)",
                   }}
                 >
                   {s.icon}
@@ -188,7 +205,7 @@ export default function Home() {
                 <div style={{ fontSize: 11, fontWeight: 700, color: "var(--teal)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
                   Step {s.step}
                 </div>
-                <div style={{ fontSize: 18, fontWeight: 700, color: "var(--navy)", marginBottom: 10 }}>{s.title}</div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: "var(--navy)", marginBottom: 10, fontFamily: "var(--font-display)" }}>{s.title}</div>
                 <div style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.6 }}>{s.body}</div>
               </div>
             ))}
@@ -226,9 +243,9 @@ export default function Home() {
       </div>
 
       {/* CTA */}
-      <div style={{ background: "var(--navy)", padding: "64px 0" }}>
+      <div style={{ background: "var(--grad-brand)", padding: "64px 0" }}>
         <div className="container center">
-          <h2 style={{ fontFamily: "Georgia, serif", fontSize: 32, color: "#fff", marginBottom: 14 }}>
+          <h2 style={{ fontSize: 32, color: "#fff", marginBottom: 14 }}>
             Free for families, always
           </h2>
           <p style={{ fontSize: 16, color: "rgba(255,255,255,0.7)", maxWidth: 480, margin: "0 auto 28px", lineHeight: 1.6 }}>

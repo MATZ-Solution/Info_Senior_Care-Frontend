@@ -119,7 +119,7 @@ export default function Search() {
 
   return (
     <div>
-      <div style={{ background: "var(--g1)", borderBottom: "1px solid var(--g3)", padding: "16px 0" }}>
+      <div style={{ background: "var(--g1)", borderBottom: "1px solid var(--g3)", padding: "18px 0" }}>
         <div className="container">
           <form
             onSubmit={(e) => {
@@ -128,7 +128,7 @@ export default function Search() {
             }}
             style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}
           >
-            <div style={{ flex: 2, minWidth: 220, display: "flex", gap: 10, background: "#fff", border: "1.5px solid var(--g3)", borderRadius: 12, padding: "10px 16px", alignItems: "center" }}>
+            <div style={{ flex: 2, minWidth: 220, display: "flex", gap: 10, background: "#fff", border: "1.5px solid var(--g3)", borderRadius: 14, padding: "10px 16px", alignItems: "center" }}>
               <span>🔍</span>
               <SearchAutocomplete
                 value={qDraft}
@@ -138,7 +138,7 @@ export default function Search() {
                 inputStyle={{ border: "none", outline: "none", width: "100%", fontSize: 14, background: "transparent" }}
               />
             </div>
-            <div style={{ flex: 1, minWidth: 140, display: "flex", gap: 10, background: "#fff", border: "1.5px solid var(--g3)", borderRadius: 12, padding: "10px 16px", alignItems: "center" }}>
+            <div style={{ flex: 1, minWidth: 140, display: "flex", gap: 10, background: "#fff", border: "1.5px solid var(--g3)", borderRadius: 14, padding: "10px 16px", alignItems: "center" }}>
               <span>📍</span>
               <input
                 value={stateDraft}
@@ -148,7 +148,7 @@ export default function Search() {
                 style={{ border: "none", outline: "none", flex: 1, fontSize: 14, background: "transparent" }}
               />
             </div>
-            <div style={{ flex: 1, minWidth: 140, display: "flex", gap: 10, background: "#fff", border: "1.5px solid var(--g3)", borderRadius: 12, padding: "10px 16px", alignItems: "center" }}>
+            <div style={{ flex: 1, minWidth: 140, display: "flex", gap: 10, background: "#fff", border: "1.5px solid var(--g3)", borderRadius: 14, padding: "10px 16px", alignItems: "center" }}>
               <span>🏙️</span>
               <input
                 value={cityDraft}
@@ -166,7 +166,7 @@ export default function Search() {
 
       <div className="container" style={{ paddingTop: 32, paddingBottom: 48 }}>
         <div className="sidebar-layout">
-          <aside className="sidebar" style={{ background: "#fff", border: "1px solid var(--g3)", borderRadius: 14, padding: 20 }}>
+          <aside className="sidebar card" style={{ padding: 20 }}>
             <div className="sidebar-section">
               <div className="sidebar-title">Care type</div>
               <div className="filter-opt" style={{ padding: "6px 0", fontSize: 14, cursor: "pointer", color: !category ? "var(--teal)" : "var(--text)", fontWeight: !category ? 700 : 400 }} onClick={() => applyFilters({ facility_type_category: undefined })}>
@@ -192,7 +192,7 @@ export default function Search() {
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, flexWrap: "wrap", gap: 8 }}>
               <div>
-                <div style={{ fontSize: 20, fontWeight: 700, color: "var(--navy)" }}>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "var(--navy)", fontFamily: "var(--font-display)" }}>
                   {result ? `${result.total} facilit${result.total === 1 ? "y" : "ies"} found` : "Searching…"}
                 </div>
                 {category && <div style={{ fontSize: 13, color: "var(--muted)" }}>{category}</div>}

@@ -43,7 +43,7 @@ export default function Onboarding() {
 
   return (
     <div className="container" style={{ paddingTop: 48, paddingBottom: 64, maxWidth: 560 }}>
-      <h1 style={{ fontFamily: "Georgia, serif", fontSize: 30, color: "var(--navy)", marginBottom: 8 }}>
+      <h1 style={{ fontSize: 30, marginBottom: 8 }}>
         Tell us a little more
       </h1>
       <p style={{ fontSize: 15, color: "var(--muted)", marginBottom: 28 }}>

@@ -37,7 +37,7 @@ export default function ChatFacilityCards({ cards }: { cards: ChatFacilityCard[]
 function ChatCard({ card }: { card: ChatFacilityCard }) {
   if (card.source === "cms_certified") {
     return (
-      <div style={{ background: "#fff", border: "1.5px solid var(--green)", borderRadius: 14, padding: 16 }}>
+      <div style={{ background: "#fff", border: "1.5px solid var(--green)", borderRadius: 16, padding: 16, boxShadow: "var(--shadow-soft)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: "var(--navy)" }}>{card.name}</div>
           <span className="pill pill-green">✓ CMS certified</span>
@@ -53,7 +53,7 @@ function ChatCard({ card }: { card: ChatFacilityCard }) {
   }
 
   return (
-    <div style={{ background: "#fff", border: "1.5px solid var(--gold)", borderRadius: 14, padding: 16 }}>
+    <div style={{ background: "#fff", border: "1.5px solid var(--gold)", borderRadius: 16, padding: 16, boxShadow: "var(--shadow-soft)" }}>
       <span className="pill pill-gold" style={{ marginBottom: 8, display: "inline-block" }}>
         Not CMS-certified — from general web search
       </span>

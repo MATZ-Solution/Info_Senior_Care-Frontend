@@ -64,7 +64,7 @@ export default function Assessment() {
     return (
       <div className="container" style={{ paddingTop: 56, paddingBottom: 64, maxWidth: 640 }}>
         <div style={{ fontSize: 36, marginBottom: 12 }}>🌿</div>
-        <h1 style={{ fontFamily: "Georgia, serif", fontSize: 30, color: "var(--navy)", marginBottom: 12 }}>
+        <h1 style={{ fontSize: 30, marginBottom: 12 }}>
           Infomary recommends: {result.assessment.recommended_care_type}
         </h1>
         <p style={{ fontSize: 15, color: "var(--muted)", lineHeight: 1.6, marginBottom: 24 }}>
@@ -92,7 +92,7 @@ export default function Assessment() {
 
   return (
     <div className="container" style={{ paddingTop: 48, paddingBottom: 64, maxWidth: 640 }}>
-      <h1 style={{ fontFamily: "Georgia, serif", fontSize: 32, color: "var(--navy)", marginBottom: 8 }}>Care assessment</h1>
+      <h1 style={{ fontSize: 32, marginBottom: 8 }}>Care assessment</h1>
       <p style={{ fontSize: 15, color: "var(--muted)", marginBottom: 32 }}>
         A few quick questions to help point you toward the right type of care.
       </p>
@@ -102,7 +102,7 @@ export default function Assessment() {
             What's the biggest need right now? <span style={{ color: "var(--coral)" }}>*</span>
           </legend>
           {PRIMARY_NEED_OPTIONS.map((opt) => (
-            <label key={opt.value} style={{ display: "flex", gap: 10, padding: "10px 14px", border: "1.5px solid var(--g3)", borderRadius: 12, marginBottom: 8, cursor: "pointer", background: primaryNeed === opt.value ? "var(--tl)" : "#fff", borderColor: primaryNeed === opt.value ? "var(--teal)" : "var(--g3)" }}>
+            <label key={opt.value} className={`option-card${primaryNeed === opt.value ? " selected" : ""}`}>
               <input type="radio" name="primary_need" value={opt.value} checked={primaryNeed === opt.value} onChange={(e) => setPrimaryNeed(e.target.value)} />
               <span style={{ fontSize: 14 }}>{opt.label}</span>
             </label>
@@ -112,7 +112,7 @@ export default function Assessment() {
         <fieldset style={{ border: "none", marginBottom: 28 }}>
           <legend style={{ fontSize: 16, fontWeight: 700, color: "var(--navy)", marginBottom: 12 }}>How soon are you looking to move forward?</legend>
           {TIMELINE_OPTIONS.map((opt) => (
-            <label key={opt.value} style={{ display: "flex", gap: 10, padding: "10px 14px", border: "1.5px solid var(--g3)", borderRadius: 12, marginBottom: 8, cursor: "pointer", background: timeline === opt.value ? "var(--tl)" : "#fff", borderColor: timeline === opt.value ? "var(--teal)" : "var(--g3)" }}>
+            <label key={opt.value} className={`option-card${timeline === opt.value ? " selected" : ""}`}>
               <input type="radio" name="timeline" value={opt.value} checked={timeline === opt.value} onChange={(e) => setTimeline(e.target.value)} />
               <span style={{ fontSize: 14 }}>{opt.label}</span>
             </label>
@@ -122,7 +122,7 @@ export default function Assessment() {
         <fieldset style={{ border: "none", marginBottom: 28 }}>
           <legend style={{ fontSize: 16, fontWeight: 700, color: "var(--navy)", marginBottom: 12 }}>What's the current living situation?</legend>
           {SITUATION_OPTIONS.map((opt) => (
-            <label key={opt.value} style={{ display: "flex", gap: 10, padding: "10px 14px", border: "1.5px solid var(--g3)", borderRadius: 12, marginBottom: 8, cursor: "pointer", background: situation === opt.value ? "var(--tl)" : "#fff", borderColor: situation === opt.value ? "var(--teal)" : "var(--g3)" }}>
+            <label key={opt.value} className={`option-card${situation === opt.value ? " selected" : ""}`}>
               <input type="radio" name="situation" value={opt.value} checked={situation === opt.value} onChange={(e) => setSituation(e.target.value)} />
               <span style={{ fontSize: 14 }}>{opt.label}</span>
             </label>

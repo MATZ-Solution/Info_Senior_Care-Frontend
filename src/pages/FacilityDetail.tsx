@@ -52,9 +52,9 @@ const SERVICE_LABELS: Record<string, string> = {
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
   if (value === null || value === undefined || value === "") return null;
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--g2)", fontSize: 13, gap: 12 }}>
-      <span style={{ color: "var(--muted)" }}>{label}</span>
-      <span style={{ fontWeight: 600, color: "var(--navy)", textAlign: "right" }}>{String(value)}</span>
+    <div className="info-row">
+      <span className="k">{label}</span>
+      <span className="v">{String(value)}</span>
     </div>
   );
 }
@@ -164,7 +164,7 @@ export default function FacilityDetail() {
       <div
         style={{
           height: 220,
-          background: "linear-gradient(135deg,#4DB6AC,#00897B)",
+          background: "var(--grad-brand-soft)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -174,12 +174,12 @@ export default function FacilityDetail() {
         🏡
       </div>
       <div className="container" style={{ paddingTop: 32, paddingBottom: 64 }}>
-        <div style={{ display: "flex", gap: 32, alignItems: "flex-start", flexWrap: "wrap" }}>
-          <div style={{ flex: 1, minWidth: 320 }}>
-            <Link to="/search" style={{ fontSize: 13, color: "var(--teal)", fontWeight: 600 }}>
+        <div className="facility-detail-grid">
+          <div style={{ minWidth: 0 }}>
+            <Link to="/search" style={{ fontSize: 13, color: "var(--teal)", fontWeight: 700 }}>
               ← Back to results
             </Link>
-            <h1 style={{ fontFamily: "Georgia, serif", fontSize: 30, color: "var(--navy)", margin: "8px 0" }}>{facility.name}</h1>
+            <h1 style={{ fontSize: 30, margin: "8px 0" }}>{facility.name}</h1>
             <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap", marginBottom: 24 }}>
               {facility.overall_rating != null && (
                 <div style={{ fontSize: 15, color: "var(--gold)" }}>
@@ -205,7 +205,7 @@ export default function FacilityDetail() {
               </div>
             )}
 
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: "var(--navy)", marginBottom: 16 }}>Facility details</h3>
+            <h3 style={{ fontSize: 18, marginBottom: 16 }}>Facility details</h3>
             <div style={{ marginBottom: 28 }}>
               <DetailRow label="Legal business name" value={facility.legal_business_name} />
               <DetailRow label="Bed count" value={facility.bed_count} />
@@ -217,7 +217,7 @@ export default function FacilityDetail() {
 
             {nhDetail && (
               <>
-                <h3 style={{ fontSize: 18, fontWeight: 700, color: "var(--navy)", marginBottom: 16 }}>Nursing home quality data</h3>
+                <h3 style={{ fontSize: 18, marginBottom: 16 }}>Nursing home quality data</h3>
                 <div style={{ marginBottom: 28 }}>
                   {Object.entries(NH_LABELS).map(([key, label]) => (
                     <DetailRow key={key} label={label} value={(nhDetail as Record<string, unknown>)[key] as React.ReactNode} />
@@ -228,7 +228,7 @@ export default function FacilityDetail() {
 
             {hhDetail && (
               <>
-                <h3 style={{ fontSize: 18, fontWeight: 700, color: "var(--navy)", marginBottom: 16 }}>Home health data</h3>
+                <h3 style={{ fontSize: 18, marginBottom: 16 }}>Home health data</h3>
                 <div style={{ marginBottom: 28 }}>
                   {Object.entries(HH_LABELS).map(([key, label]) => (
                     <DetailRow key={key} label={label} value={(hhDetail as Record<string, unknown>)[key] as React.ReactNode} />
@@ -239,7 +239,7 @@ export default function FacilityDetail() {
 
             {activeServices.length > 0 && (
               <>
-                <h3 style={{ fontSize: 18, fontWeight: 700, color: "var(--navy)", marginBottom: 14 }}>Services offered</h3>
+                <h3 style={{ fontSize: 18, marginBottom: 14 }}>Services offered</h3>
                 <div className="grid-2" style={{ gap: 10, marginBottom: 28 }}>
                   {activeServices.map(([key]) => (
                     <div key={key} style={{ display: "flex", gap: 10, padding: 12, background: "var(--g1)", borderRadius: 10 }}>
@@ -251,7 +251,7 @@ export default function FacilityDetail() {
               </>
             )}
 
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: "var(--navy)", marginBottom: 16 }}>Location</h3>
+            <h3 style={{ fontSize: 18, marginBottom: 16 }}>Location</h3>
             <div>
               <DetailRow label="Address" value={facility.address} />
               <DetailRow label="City" value={facility.city} />
@@ -262,8 +262,8 @@ export default function FacilityDetail() {
           </div>
 
           {/* SIDEBAR */}
-          <div style={{ width: 320, flexShrink: 0 }}>
-            <div style={{ background: "#fff", border: "1.5px solid var(--g3)", borderRadius: 16, padding: 24, boxShadow: "0 4px 24px rgba(0,0,0,0.08)", position: "sticky", top: 88 }}>
+          <div className="facility-detail-aside">
+            <div className="card card-p">
               <button className="btn btn-ghost btn-block" style={{ marginBottom: 10 }} onClick={toggleSave} disabled={!isSignedIn || saveBusy}>
                 {isSaved ? "♥ Saved" : "♡ Save facility"}
               </button>

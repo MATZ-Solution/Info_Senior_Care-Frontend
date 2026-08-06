@@ -93,7 +93,7 @@ export default function DashboardProfile() {
 
   return (
     <div style={{ maxWidth: 520 }}>
-      <h1 style={{ fontFamily: "Georgia, serif", fontSize: 26, color: "var(--navy)", marginBottom: 24 }}>Profile settings</h1>
+      <h1 style={{ fontSize: 26, marginBottom: 24 }}>Profile settings</h1>
 
       <form onSubmit={saveAccount} className="card card-p" style={{ marginBottom: 20 }}>
         <h3 style={{ fontSize: 15, fontWeight: 700, color: "var(--navy)", marginBottom: 14 }}>Account</h3>
