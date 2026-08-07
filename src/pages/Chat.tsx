@@ -38,11 +38,17 @@ export default function Chat() {
   const isNewSessionRef = useRef(false);
   const hasTitledRef = useRef(false);
   const lastSentUserMessageRef = useRef<string>("");
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const messagesBoxRef = useRef<HTMLDivElement | null>(null);
+  const didFirstScrollRef = useRef(false);
 
+  // Scroll the message list itself -- scrollIntoView() also scrolls the window,
+  // which parked the whole page down at the footer on every visit.
   useEffect(() => {
     messagesRef.current = messages;
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const box = messagesBoxRef.current;
+    if (!box) return;
+    box.scrollTo({ top: box.scrollHeight, behavior: didFirstScrollRef.current ? "smooth" : "auto" });
+    didFirstScrollRef.current = true;
   }, [messages]);
 
   const refreshSessions = useCallback(() => {
@@ -256,7 +262,7 @@ export default function Chat() {
           </div>
         )}
 
-        <div className="chat-messages">
+        <div className="chat-messages" ref={messagesBoxRef}>
           {loadingHistory && <div className="muted center">Loading conversation…</div>}
           {!loadingHistory &&
             messages.map((m, i) => (
@@ -284,7 +290,6 @@ export default function Chat() {
               <div className="chat-bubble">Thinking…</div>
             </div>
           )}
-          <div ref={messagesEndRef} />
         </div>
 
         <div className="chat-input-bar">
