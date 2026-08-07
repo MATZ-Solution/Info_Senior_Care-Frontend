@@ -1,18 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ApiError, facilitiesApi, savedApi } from "../lib/api";
-import type { FacilityCard, PaginatedFacilities } from "../lib/types";
+import { ApiError, facilitiesApi } from "../lib/api";
+import type { PaginatedFacilities } from "../lib/types";
 import { CARE_TYPES } from "../lib/careTypes";
 import FacilityCardView from "../components/FacilityCardView";
 import SearchAutocomplete from "../components/SearchAutocomplete";
 import { EmptyState, ErrorBanner, SearchSkeleton } from "../components/Feedback";
-import { useAuth } from "../lib/auth";
 
 const PAGE_SIZE = 12;
 
 export default function Search() {
   const [params, setParams] = useSearchParams();
-  const { isSignedIn } = useAuth();
 
   const q = params.get("q") || "";
   const state = params.get("state") || "";
@@ -27,7 +25,6 @@ export default function Search() {
   const [result, setResult] = useState<PaginatedFacilities | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     setQDraft(q);
@@ -55,23 +52,6 @@ export default function Search() {
     };
   }, [q, state, city, category, page]);
 
-  useEffect(() => {
-    if (!isSignedIn) {
-      setSavedIds(new Set());
-      return;
-    }
-    let cancelled = false;
-    savedApi
-      .list()
-      .then((items) => {
-        if (!cancelled) setSavedIds(new Set(items.map((i) => i.id)));
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [isSignedIn]);
-
   const applyFilters = useCallback(
     (overrides: Record<string, string | undefined>) => {
       const next = new URLSearchParams(params);
@@ -92,29 +72,6 @@ export default function Search() {
     next.set("page", String(n));
     setParams(next);
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  async function toggleSave(facility: FacilityCard) {
-    if (!isSignedIn) return;
-    const isSaved = savedIds.has(facility.id);
-    setSavedIds((prev) => {
-      const next = new Set(prev);
-      if (isSaved) next.delete(facility.id);
-      else next.add(facility.id);
-      return next;
-    });
-    try {
-      if (isSaved) await savedApi.remove(facility.id);
-      else await savedApi.save(facility.id);
-    } catch {
-      // revert on failure
-      setSavedIds((prev) => {
-        const next = new Set(prev);
-        if (isSaved) next.add(facility.id);
-        else next.delete(facility.id);
-        return next;
-      });
-    }
   }
 
   return (
@@ -208,7 +165,7 @@ export default function Search() {
               <>
                 <div className="grid-3">
                   {result.items.map((f) => (
-                    <FacilityCardView key={f.id} facility={f} showSave={isSignedIn} isSaved={savedIds.has(f.id)} onToggleSave={toggleSave} />
+                    <FacilityCardView key={f.id} facility={f} />
                   ))}
                 </div>
                 <div className="center" style={{ marginTop: 32, display: "flex", justifyContent: "center", gap: 12 }}>
