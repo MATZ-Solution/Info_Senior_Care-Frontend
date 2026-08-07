@@ -77,25 +77,35 @@ export default function FacilityDetail() {
   }, [id]);
 
   useEffect(() => {
-    if (!id || !isSignedIn) return;
+    // Compare against facility.id (the resolved canonical facilities.id),
+    // not the raw URL param -- the URL id can be a source_uuid (e.g. when
+    // reached from a chat facility card), which GET /facilities/{id}
+    // transparently resolves but /saved's list never contains.
+    const canonicalId = facility?.id;
+    if (!canonicalId || !isSignedIn) return;
     let cancelled = false;
     savedApi
       .list()
       .then((items) => {
-        if (!cancelled) setIsSaved(items.some((i) => i.id === id));
+        if (!cancelled) setIsSaved(items.some((i) => i.id === canonicalId));
       })
       .catch(() => {});
     return () => {
       cancelled = true;
     };
-  }, [id, isSignedIn]);
+  }, [facility?.id, isSignedIn]);
 
   async function toggleSave() {
-    if (!id || !isSignedIn) return;
+    // Must use facility.id, not the URL param `id` -- POST/DELETE
+    // /saved/{facility_id} only matches the real facilities.id and has no
+    // source_uuid fallback (unlike GET /facilities/{id}), so passing the raw
+    // URL param 404s whenever the page was reached via a source_uuid link.
+    const canonicalId = facility?.id;
+    if (!canonicalId || !isSignedIn) return;
     setSaveBusy(true);
     try {
-      if (isSaved) await savedApi.remove(id);
-      else await savedApi.save(id);
+      if (isSaved) await savedApi.remove(canonicalId);
+      else await savedApi.save(canonicalId);
       setIsSaved(!isSaved);
     } finally {
       setSaveBusy(false);
@@ -104,12 +114,13 @@ export default function FacilityDetail() {
 
   async function submitInquiry(e: React.FormEvent) {
     e.preventDefault();
-    if (!id) return;
+    const canonicalId = facility?.id;
+    if (!canonicalId) return;
     setInquiryStatus("sending");
     setInquiryError(null);
     try {
       await inquiriesApi.create({
-        facility_id: id,
+        facility_id: canonicalId,
         message: message || undefined,
         contact_phone: phone || undefined,
         contact_time_preference: timePref || undefined,
