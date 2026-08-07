@@ -16,11 +16,16 @@ import DashboardOverview from "./pages/dashboard/DashboardOverview";
 import DashboardSaved from "./pages/dashboard/DashboardSaved";
 import DashboardInquiries from "./pages/dashboard/DashboardInquiries";
 import DashboardProfile from "./pages/dashboard/DashboardProfile";
+import AdminDashboard from "./pages/admin/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
 export default function App() {
   return (
     <Routes>
+      {/* Internal leads console. Deliberately outside <Layout> -- no public
+          navbar/footer and nothing links to it; it is reached by typing the URL.
+          There is no admin auth yet, so this is unguarded for now. */}
+      <Route path="admin-dashboard" element={<AdminDashboard />} />
       <Route element={<Layout />}>
         <Route index element={<Home />} />
         <Route path="search" element={<Search />} />

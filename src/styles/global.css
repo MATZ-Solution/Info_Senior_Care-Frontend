@@ -1266,3 +1266,312 @@ img {
     max-width: 92%;
   }
 }
+
+/* ===== Admin dashboard (/admin-dashboard) =====
+   Standalone shell -- this route renders outside <Layout>, so it carries its
+   own top bar instead of the public navbar/footer. */
+.admin-shell {
+  min-height: 100vh;
+  background: var(--surface);
+}
+.admin-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 16px 32px;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--line-soft);
+}
+.admin-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--sub);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.admin-title {
+  font-size: 22px;
+}
+.admin-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.admin-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sub);
+}
+.admin-body {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 28px 32px 56px;
+}
+.admin-stats {
+  /* Overrides .grid-4 -- the admin strip carries five tiles. */
+  grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+/* ----- Toolbar ----- */
+.admin-toolbar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 18px;
+}
+.admin-input {
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  padding: 9px 14px;
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--card-bg);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.admin-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px var(--primary-tint);
+}
+.admin-search {
+  flex: 1;
+  min-width: 240px;
+}
+
+/* ----- Data table ----- */
+.data-table-wrap {
+  overflow-x: auto;
+}
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+  /* Below this the columns start squeezing into unreadable slivers -- let
+     .data-table-wrap scroll horizontally instead. */
+  min-width: 1080px;
+}
+.data-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--sub);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.data-table tbody td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line-soft);
+  /* Middle, not top: the Lead cell is three lines tall and every other cell in
+     the row is one, so top-alignment left the row looking ragged. */
+  vertical-align: middle;
+  color: var(--ink);
+}
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.data-row {
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.data-row:hover {
+  background: var(--primary-tint);
+}
+.data-table .nowrap {
+  white-space: nowrap;
+}
+.data-table .muted-cell {
+  color: var(--sub);
+}
+.cell-strong {
+  font-weight: 700;
+  color: var(--ink);
+}
+.cell-sub {
+  font-size: 12px;
+  color: var(--sub);
+}
+/* Must live on a child <div>, never on the <td> -- `display: -webkit-box` on a
+   table cell overrides `display: table-cell` and drops it out of the row. */
+.cell-clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.4;
+}
+.col-care-need {
+  width: 260px;
+  max-width: 260px;
+}
+.col-lead {
+  width: 220px;
+}
+.th-sort {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.th-sort:hover,
+.th-sort.active {
+  color: var(--primary);
+}
+.th-sort-arrow {
+  font-size: 9px;
+  opacity: 0.7;
+}
+.email-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--faint);
+  white-space: nowrap;
+}
+.email-dot.sent {
+  color: var(--success-dark);
+}
+
+/* ----- Pager ----- */
+.admin-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+.admin-pager-info {
+  font-size: 13px;
+  color: var(--sub);
+}
+.admin-pager-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.admin-pager-page {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  min-width: 52px;
+  text-align: center;
+}
+
+/* ----- Lead detail drawer ----- */
+.admin-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  justify-content: flex-end;
+}
+.admin-drawer {
+  width: min(480px, 100%);
+  background: var(--card-bg);
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-float);
+  animation: drawer-in 0.18s ease-out;
+}
+@keyframes drawer-in {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+}
+.admin-drawer-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.admin-drawer-title {
+  font-size: 19px;
+}
+.admin-drawer-sub {
+  font-size: 12px;
+  color: var(--sub);
+  margin-top: 2px;
+}
+.admin-drawer-close {
+  background: var(--surface);
+  border: none;
+  border-radius: 10px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  color: var(--sub);
+  flex-shrink: 0;
+}
+.admin-drawer-close:hover {
+  background: var(--line-soft);
+  color: var(--ink);
+}
+.admin-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+}
+.admin-drawer-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.admin-drawer-section {
+  margin-bottom: 22px;
+}
+.admin-drawer-notes {
+  font-size: 13.5px;
+  color: var(--ink);
+  white-space: pre-wrap;
+}
+.admin-drawer-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 24px;
+  border-top: 1px solid var(--line-soft);
+  background: var(--surface);
+}
+
+@media (max-width: 900px) {
+  .admin-topbar,
+  .admin-body {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+  .col-care-need {
+    width: 200px;
+    max-width: 200px;
+  }
+}

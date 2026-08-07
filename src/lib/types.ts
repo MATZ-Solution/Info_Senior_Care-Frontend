@@ -259,6 +259,35 @@ export interface GenerateTitleResponse {
   description: string;
 }
 
+// ---- Infomary leads (admin dashboard) ----
+
+/**
+ * One row of the `infomary_leads` table. Every text column is `null default ''`
+ * in Postgres, so these arrive as empty strings rather than null -- render them
+ * through `leadValue()` so blanks show as an em dash instead of nothing.
+ */
+export interface InfomaryLead {
+  /** Row identity. Optional because the admin table falls back to the row index. */
+  id?: string;
+  created_at?: string;
+  name: string;
+  email: string;
+  phone: string;
+  care_need: string;
+  care_type: string;
+  location: string;
+  age: string;
+  gender: string;
+  living_arrangement: string;
+  conditions: string;
+  insurance: string;
+  budget: string;
+  notes: string;
+  /** Free text in the DB (defaults to 'New'); the UI styles the known ones. */
+  status: string;
+  email_sent: boolean;
+}
+
 // ---- Generic API error shape (Part 9) ----
 
 export interface ApiErrorBody {
