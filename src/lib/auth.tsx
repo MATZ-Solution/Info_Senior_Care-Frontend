@@ -106,9 +106,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = useCallback(async (redirectPath?: string) => {
     if (redirectPath) sessionStorage.setItem("isc_post_auth_redirect", redirectPath);
+
+    const siteUrl = import.meta.env.VITE_SITE_URL?.trim() || window.location.origin;
+    const callbackUrl = `${siteUrl.replace(/\/$/, "")}/auth/callback`;
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: callbackUrl },
     });
     if (error) throw error;
     // On success the browser navigates to Google -- this function never
