@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import type { ChatFacilityCard } from "../lib/types";
 
 export default function ChatFacilityCards({ cards }: { cards: ChatFacilityCard[] }) {
@@ -39,7 +40,15 @@ function ChatCard({ card }: { card: ChatFacilityCard }) {
     return (
       <div style={{ background: "#fff", border: "1.5px solid var(--green)", borderRadius: 16, padding: 16, boxShadow: "var(--shadow-soft)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "var(--navy)" }}>{card.name}</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "var(--navy)" }}>
+            {card.id ? (
+              <Link to={`/facilities/${card.id}`} style={{ color: "var(--navy)" }}>
+                {card.name}
+              </Link>
+            ) : (
+              card.name
+            )}
+          </div>
           <span className="pill pill-green">✓ CMS certified</span>
         </div>
         {card.facility_type_label && <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 4 }}>{card.facility_type_label}</div>}
@@ -48,6 +57,14 @@ function ChatCard({ card }: { card: ChatFacilityCard }) {
         )}
         {card.phone && <div style={{ fontSize: 12, color: "var(--navy)", marginBottom: 6 }}>📞 {card.phone}</div>}
         {card.highlight && <span className="pill pill-teal">{card.highlight}</span>}
+        {card.note && <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 6, fontStyle: "italic" }}>{card.note}</div>}
+        {card.id && (
+          <div style={{ marginTop: 8 }}>
+            <Link to={`/facilities/${card.id}`} style={{ fontSize: 12, color: "var(--teal)", fontWeight: 600 }}>
+              View details →
+            </Link>
+          </div>
+        )}
       </div>
     );
   }

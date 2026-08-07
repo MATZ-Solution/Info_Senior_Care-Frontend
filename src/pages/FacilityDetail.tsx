@@ -6,30 +6,19 @@ import { Spinner, ErrorBanner } from "../components/Feedback";
 import { useAuth } from "../lib/auth";
 
 const NH_LABELS: Record<string, string> = {
-  nh_total_certified_beds: "Total certified beds",
-  nh_average_daily_residents: "Average daily residents",
-  nh_chain_affiliation: "Chain affiliation",
-  nh_ccrc: "Continuing care retirement community",
+  nh_special_focus_facility: "Special focus facility",
   nh_health_inspection_star_rating: "Health inspection star rating",
-  nh_staffing_star_rating: "Staffing star rating",
-  nh_quality_measure_star_rating: "Quality measure star rating",
   nh_total_nursing_hours_per_resident_day: "Nursing hours / resident / day",
-  nh_staff_stability: "Staff stability",
-  nh_health_deficiencies_latest: "Health deficiencies (latest survey)",
-  nh_number_of_fines: "Number of fines",
-  nh_total_fines_usd: "Total fines (USD)",
-  nh_penalty_summary: "Penalty summary",
+  nh_total_nursing_staff_turnover_pct: "Nursing staff turnover (%)",
 };
 
 const HH_LABELS: Record<string, string> = {
-  hh_provides_nursing_care: "Nursing care",
-  hh_provides_physical_therapy: "Physical therapy",
-  hh_provides_occupational_therapy: "Occupational therapy",
-  hh_provides_speech_therapy: "Speech therapy",
-  hh_provides_home_health_aides: "Home health aides",
-  hh_hospital_readmission_rate: "Hospital readmission rate",
   hh_home_discharge_success: "Home discharge success rate",
-  hh_medicare_cost_vs_national_avg: "Medicare cost vs. national average",
+  hh_functional_ability_discharge_score: "Functional ability at discharge",
+  hh_hospital_readmission_rate: "Hospital readmission rate",
+  hh_falls_major_injury_pct: "Falls with major injury (%)",
+  hh_developed_bedsores_pct: "Developed bedsores (%)",
+  hh_started_care_on_time_pct: "Started care on time (%)",
 };
 
 const SERVICE_LABELS: Record<string, string> = {
@@ -37,16 +26,11 @@ const SERVICE_LABELS: Record<string, string> = {
   offers_hospice_care: "Hospice care",
   offers_ventilator_care: "Ventilator care",
   offers_psychiatric_care: "Psychiatric care",
-  offers_substance_abuse_treatment: "Substance abuse treatment",
-  offers_hiv_care: "HIV care",
   offers_rehab_services: "Rehabilitation services",
   offers_adult_day_care: "Adult day care",
   offers_respite_care: "Respite care",
   offers_home_care_services: "Home care services",
   offers_traumatic_brain_injury_care: "Traumatic brain injury care",
-  offers_iv_therapy: "IV therapy",
-  offers_pain_management: "Pain management",
-  offers_medical_equipment_supply: "Medical equipment supply",
 };
 
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
@@ -191,28 +175,15 @@ export default function FacilityDetail() {
               {(facility.facility_type_category || facility.facility_type) && (
                 <span className="pill pill-teal">{facility.facility_type_category || facility.facility_type}</span>
               )}
-              {facility.operating_status && (
-                <span style={{ fontSize: 14, fontWeight: 600, color: facility.operating_status.toLowerCase() === "active" ? "var(--green)" : "var(--muted)" }}>
-                  {facility.operating_status}
-                </span>
-              )}
             </div>
-
-            {facility.specialty_notes && (
-              <div style={{ background: "var(--tl)", borderRadius: 14, padding: 20, marginBottom: 28 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--teal)", marginBottom: 4 }}>Specialty notes</div>
-                <div style={{ fontSize: 14, color: "var(--navy)", lineHeight: 1.6 }}>{facility.specialty_notes}</div>
-              </div>
-            )}
 
             <h3 style={{ fontSize: 18, marginBottom: 16 }}>Facility details</h3>
             <div style={{ marginBottom: 28 }}>
-              <DetailRow label="Legal business name" value={facility.legal_business_name} />
               <DetailRow label="Bed count" value={facility.bed_count} />
               <DetailRow label="Secure memory care beds" value={facility.secure_memory_care_beds} />
               <DetailRow label="Ownership type" value={facility.ownership_type} />
-              <DetailRow label="Data source" value={facility.data_source} />
-              <DetailRow label="Certification date" value={facility.certification_date} />
+              <DetailRow label="Facility subtype" value={facility.facility_subtype} />
+              <DetailRow label="NPI type" value={facility.npi_type} />
             </div>
 
             {nhDetail && (

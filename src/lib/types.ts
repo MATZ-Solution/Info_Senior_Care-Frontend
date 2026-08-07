@@ -21,8 +21,10 @@ export interface FacilityCard {
 export interface FacilitySuggestItem {
   id: string;
   name: string;
+  address?: string | null;
   city?: string | null;
   state?: string | null;
+  zip_code?: string | null;
 }
 
 export interface PaginatedFacilities {
@@ -34,30 +36,19 @@ export interface PaginatedFacilities {
 }
 
 export interface NursingHomeDetailOut {
-  nh_total_certified_beds?: number | null;
-  nh_average_daily_residents?: number | null;
-  nh_chain_affiliation?: string | null;
-  nh_ccrc?: string | null;
+  nh_special_focus_facility?: string | null;
   nh_health_inspection_star_rating?: number | null;
-  nh_staffing_star_rating?: number | null;
-  nh_quality_measure_star_rating?: number | null;
   nh_total_nursing_hours_per_resident_day?: number | null;
-  nh_staff_stability?: string | null;
-  nh_health_deficiencies_latest?: number | null;
-  nh_number_of_fines?: number | null;
-  nh_total_fines_usd?: number | null;
-  nh_penalty_summary?: string | null;
+  nh_total_nursing_staff_turnover_pct?: number | null;
 }
 
 export interface HomeHealthDetailOut {
-  hh_provides_nursing_care?: string | null;
-  hh_provides_physical_therapy?: string | null;
-  hh_provides_occupational_therapy?: string | null;
-  hh_provides_speech_therapy?: string | null;
-  hh_provides_home_health_aides?: string | null;
-  hh_hospital_readmission_rate?: number | null;
   hh_home_discharge_success?: number | null;
-  hh_medicare_cost_vs_national_avg?: string | null;
+  hh_functional_ability_discharge_score?: number | null;
+  hh_falls_major_injury_pct?: number | null;
+  hh_developed_bedsores_pct?: number | null;
+  hh_hospital_readmission_rate?: number | null;
+  hh_started_care_on_time_pct?: number | null;
 }
 
 export interface FacilityServicesOut {
@@ -65,29 +56,22 @@ export interface FacilityServicesOut {
   offers_hospice_care?: string | null;
   offers_ventilator_care?: string | null;
   offers_psychiatric_care?: string | null;
-  offers_substance_abuse_treatment?: string | null;
-  offers_hiv_care?: string | null;
   offers_rehab_services?: string | null;
   offers_adult_day_care?: string | null;
   offers_respite_care?: string | null;
   offers_home_care_services?: string | null;
   offers_traumatic_brain_injury_care?: string | null;
-  offers_iv_therapy?: string | null;
-  offers_pain_management?: string | null;
-  offers_medical_equipment_supply?: string | null;
 }
 
 export interface FacilityDetail extends FacilityCard {
-  legal_business_name?: string | null;
   address?: string | null;
   county?: string | null;
   phone?: string | null;
   email?: string | null;
-  operating_status?: string | null;
-  data_source?: string | null;
-  certification_date?: string | null;
+  facility_subtype?: string | null;
+  npi_type?: string | null;
   secure_memory_care_beds?: number | null;
-  specialty_notes?: string | null;
+  load_timestamp?: string | null;
   nursing_home_detail?: NursingHomeDetailOut | null;
   home_health_detail?: HomeHealthDetailOut | null;
   services?: FacilityServicesOut | null;
@@ -148,11 +132,24 @@ export interface SupabaseAuthResponse {
 }
 
 // ---- Assessment (app/schemas/assessment.py) ----
+// Scored by app/core/recommendation_weights.py -- a fixed 5-question quiz
+// (q1-q5, lettered options) weighted across the 8 supported care categories.
+// Bump ASSESSMENT_VERSION in careTypes.ts if the backend's questionnaire
+// shape ever changes.
+
+export interface CategoryScore {
+  type: string;
+  score: number; // normalized 0-100, top category = 100
+}
 
 export interface AssessmentOut {
   id: string;
   answers: Record<string, unknown>;
   recommended_care_type?: string | null;
+  recommended_types: CategoryScore[];
+  confidence_score?: number | null;
+  explanation: string[];
+  assessment_version: string;
   created_at: string;
 }
 
@@ -217,12 +214,14 @@ export type ChatRole = "user" | "assistant";
 export interface ChatFacilityCard {
   source: "cms_certified" | "not_certified";
   // cms_certified
+  id?: string; // facilities.source_uuid -- safe to use directly as a /facilities/:id link
   name?: string;
   facility_type_label?: string;
   city?: string;
   state?: string;
   phone?: string;
   highlight?: string;
+  note?: string | null; // e.g. staffing-agency disclaimer
   // not_certified
   title?: string;
   snippet?: string;

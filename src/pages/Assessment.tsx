@@ -2,56 +2,104 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ApiError, assessmentApi, formatApiErrorDetail } from "../lib/api";
 import { useAuth } from "../lib/auth";
+import { CARE_TYPES } from "../lib/careTypes";
 import type { AssessmentResult } from "../lib/types";
 import { ErrorBanner } from "../components/Feedback";
 
-const PRIMARY_NEED_OPTIONS = [
-  { value: "memory_care", label: "24-hour medical care or supervision for a complex/cognitive condition" },
-  { value: "independent", label: "Daily support with meals, medication, or personal care" },
-  { value: "medical_support", label: "Skilled medical care or therapy at home" },
-  { value: "end_of_life", label: "Comfort-focused, end-of-life care" },
+// Mirrors app/core/recommendation_weights.py exactly -- question ids (q1-q5)
+// and option ids (A-F) are sent verbatim to POST /api/v1/assessment/submit.
+// The label text here is ours (the backend has no user-facing copy), but the
+// ids and the set of options per question must match the scoring matrix.
+interface Question {
+  id: string;
+  title: string;
+  options: { id: string; label: string }[];
+}
+
+const QUESTIONS: Question[] = [
+  {
+    id: "q1",
+    title: "What's the biggest need right now?",
+    options: [
+      { id: "A", label: "Help with daily living activities" },
+      { id: "B", label: "Rehabilitation after surgery, injury, or illness" },
+      { id: "C", label: "Ongoing skilled medical or nursing care" },
+      { id: "D", label: "Serious mental or behavioral health concerns" },
+      { id: "E", label: "Daytime supervision while living at home" },
+      { id: "F", label: "Comfort-focused care for a serious or terminal illness" },
+    ],
+  },
+  {
+    id: "q2",
+    title: "How much medical care is needed?",
+    options: [
+      { id: "A", label: "No regular medical care" },
+      { id: "B", label: "Occasional check-ups" },
+      { id: "C", label: "Daily skilled nursing supervision" },
+      { id: "D", label: "Continuous 24/7 medical care" },
+    ],
+  },
+  {
+    id: "q3",
+    title: "How independent is the person day-to-day?",
+    options: [
+      { id: "A", label: "Completely independent" },
+      { id: "B", label: "Needs some assistance" },
+      { id: "C", label: "Cannot safely live alone" },
+      { id: "D", label: "Mostly bed-bound or wheelchair dependent" },
+    ],
+  },
+  {
+    id: "q4",
+    title: "Is any rehabilitation therapy needed?",
+    options: [
+      { id: "A", label: "No rehabilitation needed" },
+      { id: "B", label: "Outpatient physical, occupational, or speech therapy" },
+      { id: "C", label: "Intensive inpatient rehabilitation" },
+      { id: "D", label: "Not sure yet" },
+    ],
+  },
+  {
+    id: "q5",
+    title: "How long is care expected to be needed?",
+    options: [
+      { id: "A", label: "Daytime only" },
+      { id: "B", label: "Short-term recovery" },
+      { id: "C", label: "Long-term ongoing care" },
+      { id: "D", label: "End-of-life comfort care" },
+    ],
+  },
 ];
 
-const TIMELINE_OPTIONS = [
-  { value: "immediately", label: "Immediately" },
-  { value: "1_3_months", label: "1–3 months" },
-  { value: "3_6_months", label: "3–6 months" },
-  { value: "just_researching", label: "Just researching for now" },
-];
+function careTypeLabel(category: string): string {
+  return CARE_TYPES.find((ct) => ct.category === category)?.label || category;
+}
 
-const SITUATION_OPTIONS = [
-  { value: "living_alone", label: "Living alone" },
-  { value: "with_family", label: "Living with family" },
-  { value: "hospital_rehab", label: "Currently in hospital or rehab" },
-  { value: "current_facility", label: "Already in a care facility" },
-];
+function confidenceLabel(score: number): string {
+  if (score >= 60) return "High confidence";
+  if (score >= 30) return "Moderate confidence";
+  return "Low confidence";
+}
 
 export default function Assessment() {
   const { tokenType, continueAsGuest } = useAuth();
   const navigate = useNavigate();
 
-  const [primaryNeed, setPrimaryNeed] = useState("");
-  const [timeline, setTimeline] = useState("");
-  const [situation, setSituation] = useState("");
-  const [notes, setNotes] = useState("");
-
+  const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AssessmentResult | null>(null);
 
+  const allAnswered = QUESTIONS.every((q) => answers[q.id]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!primaryNeed) return;
+    if (!allAnswered) return;
     setSubmitting(true);
     setError(null);
     try {
       if (!tokenType) await continueAsGuest();
-      const res = await assessmentApi.submit({
-        primary_need: primaryNeed,
-        timeline: timeline || undefined,
-        current_situation: situation || undefined,
-        notes: notes || undefined,
-      });
+      const res = await assessmentApi.submit(answers);
       setResult(res);
     } catch (err) {
       setError(err instanceof ApiError ? formatApiErrorDetail(err.detail) : "Couldn't submit the assessment. Please try again.");
@@ -61,25 +109,76 @@ export default function Assessment() {
   }
 
   if (result) {
+    const { assessment, matched_facility_count } = result;
+    const topType = assessment.recommended_care_type;
+    const ranked = assessment.recommended_types.filter((r) => r.score > 0).slice(0, 4);
+
+    if (!topType) {
+      return (
+        <div className="container" style={{ paddingTop: 56, paddingBottom: 64, maxWidth: 640 }}>
+          <div style={{ fontSize: 36, marginBottom: 12 }}>🌿</div>
+          <h1 style={{ fontSize: 30, marginBottom: 12 }}>We need a bit more to go on</h1>
+          <p style={{ fontSize: 15, color: "var(--muted)", lineHeight: 1.6, marginBottom: 24 }}>
+            {assessment.explanation[0] || "Not enough information to make a recommendation."}
+          </p>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <button className="btn btn-primary btn-lg" onClick={() => setResult(null)}>
+              Retake the assessment
+            </button>
+            <Link to="/chat" className="btn btn-ghost btn-lg">
+              Talk it through with Infomary
+            </Link>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="container" style={{ paddingTop: 56, paddingBottom: 64, maxWidth: 640 }}>
         <div style={{ fontSize: 36, marginBottom: 12 }}>🌿</div>
-        <h1 style={{ fontSize: 30, marginBottom: 12 }}>
-          Infomary recommends: {result.assessment.recommended_care_type}
-        </h1>
+        <h1 style={{ fontSize: 30, marginBottom: 8 }}>Infomary recommends: {careTypeLabel(topType)}</h1>
+        {assessment.confidence_score != null && (
+          <span className="pill pill-teal" style={{ marginBottom: 16, display: "inline-block" }}>
+            {confidenceLabel(assessment.confidence_score)} ({assessment.confidence_score}%)
+          </span>
+        )}
         <p style={{ fontSize: 15, color: "var(--muted)", lineHeight: 1.6, marginBottom: 24 }}>
           Based on your answers, this is the care type most likely to fit. There
           {" "}
-          {result.matched_facility_count === 1 ? "is" : "are"} currently <strong>{result.matched_facility_count}</strong> active
-          facilit{result.matched_facility_count === 1 ? "y" : "ies"} in this category.
+          {matched_facility_count === 1 ? "is" : "are"} currently <strong>{matched_facility_count}</strong> active
+          facilit{matched_facility_count === 1 ? "y" : "ies"} in this category.
         </p>
+
+        {ranked.length > 1 && (
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--navy)", marginBottom: 10 }}>How your answers ranked</div>
+            {ranked.map((r) => (
+              <div key={r.type} style={{ marginBottom: 10 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 4 }}>
+                  <span style={{ color: "var(--navy)" }}>{careTypeLabel(r.type)}</span>
+                  <span style={{ color: "var(--muted)" }}>{r.score}%</span>
+                </div>
+                <div style={{ height: 6, background: "var(--g2)", borderRadius: 999 }}>
+                  <div style={{ height: 6, width: `${r.score}%`, background: r.type === topType ? "var(--teal)" : "var(--g3)", borderRadius: 999 }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {assessment.explanation.length > 0 && (
+          <div style={{ marginBottom: 28, background: "var(--g1)", borderRadius: 14, padding: 18 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--navy)", marginBottom: 8 }}>Why this recommendation</div>
+            <ul style={{ margin: 0, paddingLeft: 20, fontSize: 14, color: "var(--muted)", lineHeight: 1.7 }}>
+              {assessment.explanation.map((line, i) => (
+                <li key={i}>{line}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-          <button
-            className="btn btn-primary btn-lg"
-            onClick={() =>
-              navigate(`/search?facility_type_category=${encodeURIComponent(result.assessment.recommended_care_type || "")}`)
-            }
-          >
+          <button className="btn btn-primary btn-lg" onClick={() => navigate(`/search?facility_type_category=${encodeURIComponent(topType)}`)}>
             View matching facilities →
           </button>
           <Link to="/chat" className="btn btn-ghost btn-lg">
@@ -94,49 +193,32 @@ export default function Assessment() {
     <div className="container" style={{ paddingTop: 48, paddingBottom: 64, maxWidth: 640 }}>
       <h1 style={{ fontSize: 32, marginBottom: 8 }}>Care assessment</h1>
       <p style={{ fontSize: 15, color: "var(--muted)", marginBottom: 32 }}>
-        A few quick questions to help point you toward the right type of care.
+        5 quick questions to help point you toward the right type of care.
       </p>
       <form onSubmit={handleSubmit}>
-        <fieldset style={{ border: "none", marginBottom: 28 }}>
-          <legend style={{ fontSize: 16, fontWeight: 700, color: "var(--navy)", marginBottom: 12 }}>
-            What's the biggest need right now? <span style={{ color: "var(--coral)" }}>*</span>
-          </legend>
-          {PRIMARY_NEED_OPTIONS.map((opt) => (
-            <label key={opt.value} className={`option-card${primaryNeed === opt.value ? " selected" : ""}`}>
-              <input type="radio" name="primary_need" value={opt.value} checked={primaryNeed === opt.value} onChange={(e) => setPrimaryNeed(e.target.value)} />
-              <span style={{ fontSize: 14 }}>{opt.label}</span>
-            </label>
-          ))}
-        </fieldset>
-
-        <fieldset style={{ border: "none", marginBottom: 28 }}>
-          <legend style={{ fontSize: 16, fontWeight: 700, color: "var(--navy)", marginBottom: 12 }}>How soon are you looking to move forward?</legend>
-          {TIMELINE_OPTIONS.map((opt) => (
-            <label key={opt.value} className={`option-card${timeline === opt.value ? " selected" : ""}`}>
-              <input type="radio" name="timeline" value={opt.value} checked={timeline === opt.value} onChange={(e) => setTimeline(e.target.value)} />
-              <span style={{ fontSize: 14 }}>{opt.label}</span>
-            </label>
-          ))}
-        </fieldset>
-
-        <fieldset style={{ border: "none", marginBottom: 28 }}>
-          <legend style={{ fontSize: 16, fontWeight: 700, color: "var(--navy)", marginBottom: 12 }}>What's the current living situation?</legend>
-          {SITUATION_OPTIONS.map((opt) => (
-            <label key={opt.value} className={`option-card${situation === opt.value ? " selected" : ""}`}>
-              <input type="radio" name="situation" value={opt.value} checked={situation === opt.value} onChange={(e) => setSituation(e.target.value)} />
-              <span style={{ fontSize: 14 }}>{opt.label}</span>
-            </label>
-          ))}
-        </fieldset>
-
-        <div className="field">
-          <label>Anything else Infomary should know? (optional)</label>
-          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Health conditions, budget concerns, preferences…" />
-        </div>
+        {QUESTIONS.map((q, qi) => (
+          <fieldset key={q.id} style={{ border: "none", marginBottom: 28 }}>
+            <legend style={{ fontSize: 16, fontWeight: 700, color: "var(--navy)", marginBottom: 12 }}>
+              {qi + 1}. {q.title} <span style={{ color: "var(--coral)" }}>*</span>
+            </legend>
+            {q.options.map((opt) => (
+              <label key={opt.id} className={`option-card${answers[q.id] === opt.id ? " selected" : ""}`}>
+                <input
+                  type="radio"
+                  name={q.id}
+                  value={opt.id}
+                  checked={answers[q.id] === opt.id}
+                  onChange={() => setAnswers((prev) => ({ ...prev, [q.id]: opt.id }))}
+                />
+                <span style={{ fontSize: 14 }}>{opt.label}</span>
+              </label>
+            ))}
+          </fieldset>
+        ))}
 
         {error && <ErrorBanner message={error} />}
 
-        <button type="submit" className="btn btn-primary btn-lg btn-block" disabled={!primaryNeed || submitting} style={{ marginTop: 12 }}>
+        <button type="submit" className="btn btn-primary btn-lg btn-block" disabled={!allAnswered || submitting} style={{ marginTop: 12 }}>
           {submitting ? "Submitting…" : "Get my recommendation"}
         </button>
       </form>

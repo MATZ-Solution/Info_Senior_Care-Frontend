@@ -151,7 +151,10 @@ export const facilitiesApi = {
 // ===== Part 4: Assessment =====
 
 export const assessmentApi = {
-  submit: (answers: Record<string, unknown>) =>
+  // `answers` maps question id -> option id, e.g. { q1: "B", q2: "C", ... }
+  // (see app/core/recommendation_weights.py). `assessment_version` defaults
+  // server-side when omitted.
+  submit: (answers: Record<string, string>) =>
     request<AssessmentResult>("/api/v1/assessment/submit", { method: "POST", body: { answers } }),
   latest: () => request<AssessmentOut>("/api/v1/assessment/me/latest"),
 };
