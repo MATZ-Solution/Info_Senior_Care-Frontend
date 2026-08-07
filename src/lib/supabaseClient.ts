@@ -15,4 +15,12 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
-export const supabase = createClient(supabaseUrl || "", supabaseAnonKey || "");
+export const supabase = createClient(supabaseUrl || "", supabaseAnonKey || "", {
+  auth: {
+    flowType: "pkce",
+    // The /auth/callback page exchanges the code itself (see
+    // completeOAuthSignIn) so the result is awaited rather than racing an
+    // implicit background exchange the page can't observe.
+    detectSessionInUrl: false,
+  },
+});

@@ -107,7 +107,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithGoogle = useCallback(async (redirectPath?: string) => {
     if (redirectPath) sessionStorage.setItem("isc_post_auth_redirect", redirectPath);
 
-    const siteUrl = import.meta.env.VITE_SITE_URL?.trim() || window.location.origin;
+    // The origin the user is actually on wins over VITE_SITE_URL: the PKCE
+    // code verifier is written to this origin's localStorage, so redirecting
+    // back to a *different* host (a Vercel preview deploy vs. the production
+    // alias) loses the verifier and the exchange fails.
+    const siteUrl = window.location.origin || import.meta.env.VITE_SITE_URL?.trim() || "";
     const callbackUrl = `${siteUrl.replace(/\/$/, "")}/auth/callback`;
 
     const { error } = await supabase.auth.signInWithOAuth({
@@ -121,9 +125,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const completeOAuthSignIn = useCallback(async (): Promise<SignInUpOutcome> => {
     try {
-      const { data, error } = await supabase.auth.getSession();
+      const params = new URLSearchParams(window.location.search);
+
+      // Supabase reports provider/allowlist failures as query params on the
+      // redirect rather than as a thrown error, so surface them verbatim --
+      // "redirect_to is not allowed" is otherwise invisible.
+      const oauthError = params.get("error_description") || params.get("error");
+      if (oauthError) return { status: "error", message: oauthError };
+
+      const code = params.get("code");
+      if (!code) {
+        return {
+          status: "error",
+          message: "Google sign-in failed -- no authorization code in the callback URL.",
+        };
+      }
+
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
       if (error || !data.session) {
-        return { status: "error", message: "Google sign-in failed -- no session returned." };
+        return {
+          status: "error",
+          message: error?.message || "Google sign-in failed -- no session returned.",
+        };
       }
       setToken(data.session.access_token, "user");
       setTokenType("user");
