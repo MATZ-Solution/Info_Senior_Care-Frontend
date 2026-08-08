@@ -112,6 +112,10 @@ export default function Chat() {
 
     ws.onclose = () => {
       wsRef.current = null;
+      // A drop mid-reply must not leave `sending` stuck true forever -- that
+      // would permanently disable the Send button until a page reload, since
+      // nothing else would ever flip it back.
+      setSending(false);
       if (attemptRef.current >= MAX_ATTEMPTS) {
         setStatus("disconnected");
         return;
@@ -181,7 +185,10 @@ export default function Chat() {
   function handleSend(e: React.FormEvent) {
     e.preventDefault();
     const text = draft.trim();
-    if (!text || !sessionId) return;
+    // Block sending while a reply is still in flight -- one turn at a time.
+    // The input itself stays editable so the user can keep typing/queue up
+    // their next message, they just can't fire it off until this one lands.
+    if (!text || !sessionId || sending) return;
 
     const historyForSend = messagesRef.current
       .filter((m) => m !== GREETING)
@@ -300,8 +307,8 @@ export default function Chat() {
               placeholder="Ask Infomary anything about senior care…"
               style={{ flex: 1, border: "none", background: "transparent", fontSize: 14, outline: "none" }}
             />
-            <button type="submit" className="btn btn-primary btn-sm" disabled={!draft.trim()}>
-              Send →
+            <button type="submit" className="btn btn-primary btn-sm" disabled={!draft.trim() || sending}>
+              {sending ? "Sending…" : "Send →"}
             </button>
           </form>
         </div>

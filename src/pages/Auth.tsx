@@ -5,6 +5,8 @@ import { ErrorBanner } from "../components/Feedback";
 
 type Tab = "signin" | "signup";
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function Auth() {
   const [params] = useSearchParams();
   const initialTab: Tab = params.get("tab") === "signup" ? "signup" : "signin";
@@ -17,16 +19,27 @@ export default function Auth() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmEmailNotice, setConfirmEmailNotice] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSubmitting(true);
     setError(null);
     setConfirmEmailNotice(false);
-    const outcome = tab === "signin" ? await signIn(email, password) : await signUp(email, password);
+
+    if (!EMAIL_RE.test(email.trim())) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+
+    setSubmitting(true);
+    const outcome = tab === "signin" ? await signIn(email.trim(), password) : await signUp(email.trim(), password);
     setSubmitting(false);
     if (outcome.status === "signed_in") {
       navigate(from, { replace: true });
@@ -109,11 +122,47 @@ export default function Auth() {
         <form onSubmit={handleSubmit}>
           <div className="field">
             <label>Email address</label>
-            <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+            <input
+              type="email"
+              required
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
           </div>
           <div className="field">
             <label>Password</label>
-            <input type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
+            <div style={{ position: "relative" }}>
+              <input
+                type={showPassword ? "text" : "password"}
+                required
+                minLength={6}
+                placeholder="At least 6 characters"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                style={{ paddingRight: 44 }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                style={{
+                  position: "absolute",
+                  right: 4,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: 8,
+                  fontSize: 16,
+                  lineHeight: 1,
+                  color: "var(--muted)",
+                }}
+              >
+                {showPassword ? "🙈" : "👁️"}
+              </button>
+            </div>
           </div>
 
           {error && <ErrorBanner message={error} />}

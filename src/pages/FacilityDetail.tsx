@@ -11,6 +11,19 @@ import { useAuth } from "../lib/auth";
 const INQUIRY_BUDGETS = ["Under $3k / mo", "$3k–5k / mo", "$5k–7k / mo", "$7k+ / mo", "Not sure yet"];
 const INQUIRY_TIMELINES = ["Immediately", "Within a month", "1–3 months", "Just researching"];
 
+// Strips everything except digits, caps at 10 (US numbers), and formats as
+// the user types: (305) 555-0100 -- matches the mobile app's formatUSPhone.
+// Non-digit keystrokes (letters, symbols) are silently dropped rather than
+// rejected, so pasting a longer/garbage string is sanitized the same way.
+function formatUSPhone(raw: string): string {
+  const digits = raw.replace(/\D/g, "").slice(0, 10);
+  const len = digits.length;
+  if (len === 0) return "";
+  if (len < 4) return `(${digits}`;
+  if (len < 7) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
+
 const NH_LABELS: Record<string, string> = {
   nh_special_focus_facility: "Special focus facility",
   nh_health_inspection_star_rating: "Health inspection star rating",
@@ -293,7 +306,13 @@ export default function FacilityDetail() {
                   </div>
                   <div className="field">
                     <label>Contact phone</label>
-                    <input value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={30} placeholder="(305) 555-0100" />
+                    <input
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(formatUSPhone(e.target.value))}
+                      maxLength={14}
+                      placeholder="Only US Number"
+                    />
                   </div>
                   <div className="field">
                     <label>Monthly budget</label>

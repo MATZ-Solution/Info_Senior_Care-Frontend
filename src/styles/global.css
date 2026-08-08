@@ -736,6 +736,7 @@ img {
 .field textarea {
   resize: vertical;
   min-height: 90px;
+  max-height: 280px;
 }
 
 /* ===== Sidebar / filters (search page) ===== */
@@ -1210,14 +1211,23 @@ img {
   background: var(--card-bg);
 }
 .chat-markdown p {
-  margin-bottom: 8px;
-}
-.chat-markdown p:last-child {
-  margin-bottom: 0;
+  margin: 0 0 8px;
 }
 .chat-markdown ul,
 .chat-markdown ol {
   margin: 6px 0 6px 20px;
+}
+/* Browser default UA margins on the first/last block (e.g. a <p>'s implicit
+   margin-top) would otherwise add lopsided padding inside the bubble -- most
+   visible on a short, single-paragraph reply where there's nothing below to
+   balance it out. Zeroing the outer edges keeps the bubble's own padding the
+   only spacing, regardless of message length or which element markdown
+   happens to render first/last. */
+.chat-markdown > *:first-child {
+  margin-top: 0;
+}
+.chat-markdown > *:last-child {
+  margin-bottom: 0;
 }
 .chat-markdown a {
   color: var(--primary);
