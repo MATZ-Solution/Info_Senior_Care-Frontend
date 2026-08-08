@@ -126,7 +126,7 @@ export default function AdminDashboard() {
   function handleStatusChange(lead: InfomaryLead, status: string) {
     setLeads((prev) => (prev ? prev.map((l) => (l === lead ? { ...l, status } : l)) : prev));
     setSelected((prev) => (prev === lead ? { ...prev, status } : prev));
-    if (lead.id) void updateLeadStatus(lead.id, status);
+    if (lead.lead_id) void updateLeadStatus(lead.lead_id, status);
   }
 
   const filtersActive = Boolean(search || statusFilter || careTypeFilter || emailFilter);
@@ -244,7 +244,7 @@ export default function AdminDashboard() {
                 </thead>
                 <tbody>
                   {pageRows.map((lead, i) => (
-                    <tr key={lead.id ?? `${lead.email}-${i}`} onClick={() => setSelected(lead)} className="data-row">
+                    <tr key={lead.lead_id ?? `${lead.email}-${i}`} onClick={() => setSelected(lead)} className="data-row">
                       <td className="nowrap muted-cell">{formatLeadDate(lead.created_at)}</td>
                       <td>
                         <div className="cell-strong">{leadValue(lead.name)}</div>

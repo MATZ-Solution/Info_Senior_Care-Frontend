@@ -4,6 +4,7 @@ import type {
   AssessmentResult,
   ChatHistoryResponse,
   ChatSessionsResponse,
+  DashboardStats,
   FacilityCard,
   FacilityDetail,
   FacilitySearchParams,
@@ -11,6 +12,7 @@ import type {
   GenerateTitleResponse,
   GuestSessionOut,
   HealthResponse,
+  InfomaryLead,
   InquiryCreate,
   InquiryOut,
   MessageResponse,
@@ -198,4 +200,20 @@ export const chatApi = {
     }),
   deleteSession: (sessionId: string) =>
     request<{ status: string }>("/delete-session", { method: "POST", auth: false, body: { session_id: sessionId } }),
+};
+
+// ===== Part 14: Dashboard (internal/admin, REST, root-level, unversioned) =====
+// No bearer-token gate on these routes server-side (see app/main.py) -- the
+// backend leaves access control to whatever sits in front of the admin UI.
+
+export const adminApi = {
+  stats: () => request<DashboardStats>("/dashboard/stats", { auth: false }),
+  leads: (params?: { limit?: number; offset?: number; status?: string }) =>
+    request<{ leads: InfomaryLead[] }>("/dashboard/leads", { query: params, auth: false }),
+  updateLeadStatus: (leadId: string, status: string) =>
+    request<{ status: string }>("/dashboard/leads/status", {
+      method: "POST",
+      auth: false,
+      body: { lead_id: leadId, status },
+    }),
 };

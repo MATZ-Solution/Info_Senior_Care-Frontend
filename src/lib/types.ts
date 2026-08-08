@@ -262,14 +262,18 @@ export interface GenerateTitleResponse {
 // ---- Infomary leads (admin dashboard) ----
 
 /**
- * One row of the `infomary_leads` table. Every text column is `null default ''`
- * in Postgres, so these arrive as empty strings rather than null -- render them
- * through `leadValue()` so blanks show as an em dash instead of nothing.
+ * One row of the `infomary_leads` table (GET /dashboard/leads, root-level,
+ * unversioned -- see database.py::get_all_leads). Every text column is
+ * `default ''` in Postgres, so these arrive as empty strings rather than
+ * null -- render them through `leadValue()` so blanks show as an em dash
+ * instead of nothing.
  */
 export interface InfomaryLead {
-  /** Row identity. Optional because the admin table falls back to the row index. */
-  id?: string;
+  id: number; // SERIAL primary key -- internal only, not stable across re-imports
+  lead_id: string; // the actual business identifier -- use this for status updates and as the row key
+  session_id: string;
   created_at?: string;
+  updated_at?: string;
   name: string;
   email: string;
   phone: string;
@@ -286,6 +290,23 @@ export interface InfomaryLead {
   /** Free text in the DB (defaults to 'New'); the UI styles the known ones. */
   status: string;
   email_sent: boolean;
+}
+
+// ---- Dashboard stats (GET /dashboard/stats, root-level, unversioned) ----
+
+export interface DashboardTrendPoint {
+  day: string;
+  count: number;
+}
+
+export interface DashboardStats {
+  total_sessions: number;
+  total_leads: number;
+  qualified_leads: number;
+  emails_sent: number;
+  today_sessions: number;
+  today_leads: number;
+  trend: DashboardTrendPoint[];
 }
 
 // ---- Generic API error shape (Part 9) ----
