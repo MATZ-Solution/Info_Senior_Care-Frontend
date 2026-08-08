@@ -1192,6 +1192,15 @@ img {
   font-size: 14px;
   line-height: 1.6;
   max-width: 68%;
+  /* Without this, a 1-2 word message ("hi") shrink-wraps down to roughly its
+     own height (~48px from padding + line-height), leaving a near-square
+     box. The 20px corner radius then eats almost half of that box on three
+     sides, distorting it into a lopsided blob instead of a rounded
+     rectangle -- which reads as "text isn't centered" even though the text
+     itself is centered in the padding box; it's the shape around it that's
+     off. A sane min-width keeps the box wide enough for the radius to stay
+     a small fraction of it, regardless of message length. */
+  min-width: 64px;
   background: var(--card-bg);
   border: 1px solid var(--line-soft);
   color: var(--ink);
