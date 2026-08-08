@@ -163,14 +163,23 @@ export interface AssessmentResult {
 export interface InquiryCreate {
   facility_id: string;
   message?: string;
+  budget?: string;
   contact_phone?: string;
+  /** Move-in timeline urgency (e.g. "Immediately", "1-3 months") -- not a literal call-time. */
   contact_time_preference?: string;
 }
 
 export interface InquiryOut {
   id: string;
+  user_name?: string | null;
+  user_email?: string | null;
   facility_id: string;
+  facility_name?: string | null;
+  facility_type_category?: string | null;
+  state?: string | null;
+  city?: string | null;
   message?: string | null;
+  budget?: string | null;
   contact_phone?: string | null;
   contact_time_preference?: string | null;
   status: string;

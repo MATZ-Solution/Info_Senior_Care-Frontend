@@ -1,15 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ApiError, assessmentApi, formatApiErrorDetail } from "../lib/api";
+import { ApiError, assessmentApi, facilitiesApi, formatApiErrorDetail } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { CARE_TYPES } from "../lib/careTypes";
-import type { AssessmentResult } from "../lib/types";
+import type { AssessmentResult, FacilityCard } from "../lib/types";
 import { ErrorBanner } from "../components/Feedback";
+import FacilityCardView from "../components/FacilityCardView";
 
 // Mirrors app/core/recommendation_weights.py exactly -- question ids (q1-q5)
 // and option ids (A-F) are sent verbatim to POST /api/v1/assessment/submit.
-// The label text here is ours (the backend has no user-facing copy), but the
-// ids and the set of options per question must match the scoring matrix.
+// Wording matches the mobile app's data/quiz.js verbatim so both clients ask
+// the same questions for the same backend scoring matrix.
 interface Question {
   id: string;
   title: string;
@@ -19,51 +20,51 @@ interface Question {
 const QUESTIONS: Question[] = [
   {
     id: "q1",
-    title: "What's the biggest need right now?",
+    title: "What is the primary reason you are looking for care?",
     options: [
-      { id: "A", label: "Help with daily living activities" },
+      { id: "A", label: "Help with daily living activities (bathing, dressing, meals)" },
       { id: "B", label: "Rehabilitation after surgery, injury, or illness" },
       { id: "C", label: "Ongoing skilled medical or nursing care" },
-      { id: "D", label: "Serious mental or behavioral health concerns" },
+      { id: "D", label: "Care for serious mental or behavioral health concerns" },
       { id: "E", label: "Daytime supervision while living at home" },
       { id: "F", label: "Comfort-focused care for a serious or terminal illness" },
     ],
   },
   {
     id: "q2",
-    title: "How much medical care is needed?",
+    title: "What level of medical care is needed?",
     options: [
-      { id: "A", label: "No regular medical care" },
-      { id: "B", label: "Occasional check-ups" },
-      { id: "C", label: "Daily skilled nursing supervision" },
-      { id: "D", label: "Continuous 24/7 medical care" },
+      { id: "A", label: "No regular medical care is needed" },
+      { id: "B", label: "Occasional medical check-ups are enough" },
+      { id: "C", label: "Daily nursing or skilled medical supervision is required" },
+      { id: "D", label: "Continuous 24/7 medical care is required" },
     ],
   },
   {
     id: "q3",
-    title: "How independent is the person day-to-day?",
+    title: "Which statement best describes mobility and independence?",
     options: [
       { id: "A", label: "Completely independent" },
-      { id: "B", label: "Needs some assistance" },
+      { id: "B", label: "Needs some assistance with daily activities" },
       { id: "C", label: "Cannot safely live alone" },
       { id: "D", label: "Mostly bed-bound or wheelchair dependent" },
     ],
   },
   {
     id: "q4",
-    title: "Is any rehabilitation therapy needed?",
+    title: "Do you currently need rehabilitation or therapy services?",
     options: [
-      { id: "A", label: "No rehabilitation needed" },
-      { id: "B", label: "Outpatient physical, occupational, or speech therapy" },
-      { id: "C", label: "Intensive inpatient rehabilitation" },
-      { id: "D", label: "Not sure yet" },
+      { id: "A", label: "No rehabilitation is needed" },
+      { id: "B", label: "Therapy sessions where I go home afterward (outpatient therapy)" },
+      { id: "C", label: "Therapy where I need to stay at a facility full-time (inpatient rehab)" },
+      { id: "D", label: "Unsure" },
     ],
   },
   {
     id: "q5",
-    title: "How long is care expected to be needed?",
+    title: "What best describes your expected care needs?",
     options: [
-      { id: "A", label: "Daytime only" },
+      { id: "A", label: "Only during the daytime" },
       { id: "B", label: "Short-term recovery" },
       { id: "C", label: "Long-term ongoing care" },
       { id: "D", label: "End-of-life comfort care" },
@@ -89,8 +90,32 @@ export default function Assessment() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AssessmentResult | null>(null);
+  const [matches, setMatches] = useState<FacilityCard[] | null>(null);
 
   const allAnswered = QUESTIONS.every((q) => answers[q.id]);
+  const topType = result?.assessment.recommended_care_type || null;
+
+  // Mirrors the mobile app's result screen: once a category is recommended,
+  // pull a live preview of real matching facilities rather than just a count.
+  useEffect(() => {
+    if (!topType) {
+      setMatches(null);
+      return;
+    }
+    let cancelled = false;
+    setMatches(null);
+    facilitiesApi
+      .search({ facility_type_category: topType, page_size: 6 })
+      .then((res) => {
+        if (!cancelled) setMatches(res.items);
+      })
+      .catch(() => {
+        if (!cancelled) setMatches([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [topType]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -110,7 +135,6 @@ export default function Assessment() {
 
   if (result) {
     const { assessment, matched_facility_count } = result;
-    const topType = assessment.recommended_care_type;
     const ranked = assessment.recommended_types.filter((r) => r.score > 0).slice(0, 4);
 
     if (!topType) {
@@ -134,7 +158,7 @@ export default function Assessment() {
     }
 
     return (
-      <div className="container" style={{ paddingTop: 56, paddingBottom: 64, maxWidth: 640 }}>
+      <div className="container" style={{ paddingTop: 56, paddingBottom: 64, maxWidth: 820 }}>
         <div style={{ fontSize: 36, marginBottom: 12 }}>🌿</div>
         <h1 style={{ fontSize: 30, marginBottom: 8 }}>Infomary recommends: {careTypeLabel(topType)}</h1>
         {assessment.confidence_score != null && (
@@ -176,6 +200,27 @@ export default function Assessment() {
             </ul>
           </div>
         )}
+
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: "var(--navy)", marginBottom: 14 }}>Top matches near you</div>
+          {matches === null && (
+            <div style={{ display: "flex", gap: 12 }}>
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="skeleton" style={{ height: 160, flex: 1, borderRadius: 14 }} />
+              ))}
+            </div>
+          )}
+          {matches && matches.length === 0 && (
+            <p style={{ fontSize: 13, color: "var(--muted)" }}>No exact matches yet — search all communities below.</p>
+          )}
+          {matches && matches.length > 0 && (
+            <div className="grid-3">
+              {matches.map((f) => (
+                <FacilityCardView key={f.id} facility={f} />
+              ))}
+            </div>
+          )}
+        </div>
 
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
           <button className="btn btn-primary btn-lg" onClick={() => navigate(`/search?facility_type_category=${encodeURIComponent(topType)}`)}>

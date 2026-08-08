@@ -5,6 +5,12 @@ import type { FacilityDetail as FacilityDetailType } from "../lib/types";
 import { Spinner, ErrorBanner } from "../components/Feedback";
 import { useAuth } from "../lib/auth";
 
+// Matches the mobile app's data/resources.js verbatim -- same fixed choices,
+// same backend fields (budget is its own column; timeline is move-in
+// urgency, sent as contact_time_preference -- NOT a literal call-time).
+const INQUIRY_BUDGETS = ["Under $3k / mo", "$3k–5k / mo", "$5k–7k / mo", "$7k+ / mo", "Not sure yet"];
+const INQUIRY_TIMELINES = ["Immediately", "Within a month", "1–3 months", "Just researching"];
+
 const NH_LABELS: Record<string, string> = {
   nh_special_focus_facility: "Special focus facility",
   nh_health_inspection_star_rating: "Health inspection star rating",
@@ -54,6 +60,7 @@ export default function FacilityDetail() {
   const [showInquiry, setShowInquiry] = useState(false);
   const [message, setMessage] = useState("");
   const [phone, setPhone] = useState("");
+  const [budget, setBudget] = useState("");
   const [timePref, setTimePref] = useState("");
   const [inquiryStatus, setInquiryStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [inquiryError, setInquiryError] = useState<string | null>(null);
@@ -116,16 +123,28 @@ export default function FacilityDetail() {
     e.preventDefault();
     const canonicalId = facility?.id;
     if (!canonicalId) return;
+
+    const phoneDigits = phone.replace(/\D/g, "");
+    if (phoneDigits.length > 0 && phoneDigits.length !== 10) {
+      setInquiryError("Please enter a valid 10-digit US phone number.");
+      return;
+    }
+
     setInquiryStatus("sending");
     setInquiryError(null);
     try {
       await inquiriesApi.create({
         facility_id: canonicalId,
-        message: message || undefined,
+        message: message.trim() || undefined,
+        budget: budget || undefined,
         contact_phone: phone || undefined,
         contact_time_preference: timePref || undefined,
       });
       setInquiryStatus("sent");
+      setMessage("");
+      setPhone("");
+      setBudget("");
+      setTimePref("");
     } catch (err) {
       setInquiryStatus("error");
       setInquiryError(err instanceof ApiError ? formatApiErrorDetail(err.detail) : "Failed to send inquiry.");
@@ -274,11 +293,29 @@ export default function FacilityDetail() {
                   </div>
                   <div className="field">
                     <label>Contact phone</label>
-                    <input value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={30} />
+                    <input value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={30} placeholder="(305) 555-0100" />
                   </div>
                   <div className="field">
-                    <label>Best time to reach you</label>
-                    <input value={timePref} onChange={(e) => setTimePref(e.target.value)} maxLength={100} placeholder="e.g. Weekday afternoons" />
+                    <label>Monthly budget</label>
+                    <select value={budget} onChange={(e) => setBudget(e.target.value)}>
+                      <option value="">Select a range</option>
+                      {INQUIRY_BUDGETS.map((b) => (
+                        <option key={b} value={b}>
+                          {b}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="field">
+                    <label>Timeline</label>
+                    <select value={timePref} onChange={(e) => setTimePref(e.target.value)}>
+                      <option value="">Select a timeline</option>
+                      {INQUIRY_TIMELINES.map((t) => (
+                        <option key={t} value={t}>
+                          {t}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   {inquiryError && <ErrorBanner message={inquiryError} />}
                   <button type="submit" className="btn btn-primary btn-block" disabled={inquiryStatus === "sending"} style={{ marginTop: 8 }}>
