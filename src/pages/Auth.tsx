@@ -193,8 +193,8 @@ export default function Auth() {
           Continue as guest
         </button>
         <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 10 }}>
-          Guests can browse, chat with Infomary, and submit inquiries, but can't save facilities or view inquiry
-          history across devices.
+          Guests can browse facilities and submit inquiries, but can't chat with Infomary, save facilities, or view
+          inquiry history across devices.
         </p>
       </div>
     </div>

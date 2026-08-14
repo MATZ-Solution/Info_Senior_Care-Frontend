@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { ApiError, facilitiesApi, formatApiErrorDetail, inquiriesApi, savedApi } from "../lib/api";
 import type { FacilityDetail as FacilityDetailType } from "../lib/types";
 import { Spinner, ErrorBanner } from "../components/Feedback";
@@ -65,6 +65,11 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
 export default function FacilityDetail() {
   const { id } = useParams<{ id: string }>();
   const { isSignedIn } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  // Sign-in from this page must come back *here*, not to the dashboard --
+  // otherwise the user has to hunt down the facility all over again.
+  const authState = { from: location.pathname + location.search };
   const [facility, setFacility] = useState<FacilityDetailType | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState(false);
@@ -120,8 +125,12 @@ export default function FacilityDetail() {
     // /saved/{facility_id} only matches the real facilities.id and has no
     // source_uuid fallback (unlike GET /facilities/{id}), so passing the raw
     // URL param 404s whenever the page was reached via a source_uuid link.
+    if (!isSignedIn) {
+      navigate("/auth", { state: authState });
+      return;
+    }
     const canonicalId = facility?.id;
-    if (!canonicalId || !isSignedIn) return;
+    if (!canonicalId) return;
     setSaveBusy(true);
     try {
       if (isSaved) await savedApi.remove(canonicalId);
@@ -278,11 +287,11 @@ export default function FacilityDetail() {
           {/* SIDEBAR */}
           <div className="facility-detail-aside">
             <div className="card card-p">
-              <button className="btn btn-ghost btn-block" style={{ marginBottom: 10 }} onClick={toggleSave} disabled={!isSignedIn || saveBusy}>
+              <button className="btn btn-ghost btn-block" style={{ marginBottom: 10 }} onClick={toggleSave} disabled={saveBusy}>
                 {isSaved ? "♥ Saved" : "♡ Save facility"}
               </button>
               {!isSignedIn && <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 16 }}>
-                <Link to="/auth" style={{ color: "var(--teal)", fontWeight: 600 }}>Sign in</Link> to save facilities or contact them.
+                <Link to="/auth" state={authState} style={{ color: "var(--teal)", fontWeight: 600 }}>Sign in</Link> to save facilities or contact them.
               </p>}
 
               {isSignedIn && !showInquiry && inquiryStatus !== "sent" && (

@@ -14,7 +14,9 @@ export default function RequireUser({ children }: { children: ReactNode }) {
 
   if (loading) return <Spinner />;
   if (!isSignedIn) {
-    return <Navigate to="/auth" state={{ from: location.pathname }} replace />;
+    // Carry the query string too -- /search?... and /chat?session=... are
+    // meaningless without it, and Auth sends the user straight back here.
+    return <Navigate to="/auth" state={{ from: location.pathname + location.search }} replace />;
   }
   return <>{children}</>;
 }

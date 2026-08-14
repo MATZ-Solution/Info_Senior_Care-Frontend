@@ -30,7 +30,14 @@ export default function App() {
         <Route index element={<Home />} />
         <Route path="search" element={<Search />} />
         <Route path="facilities/:id" element={<FacilityDetail />} />
-        <Route path="chat" element={<Chat />} />
+        <Route
+          path="chat"
+          element={
+            <RequireUser>
+              <Chat />
+            </RequireUser>
+          }
+        />
         <Route path="assessment" element={<Assessment />} />
         <Route path="onboarding" element={<Onboarding />} />
         <Route path="resources" element={<Knowledge />} />
