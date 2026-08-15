@@ -1,11 +1,11 @@
 import { adminApi } from "./api";
-import type { InfomaryLead } from "./types";
+import type { UnifiedLead } from "./types";
 
 /**
- * Data source for the /admin-dashboard leads table -- backed by the root-level,
- * unversioned dashboard routes in app/main.py (GET /dashboard/leads,
- * POST /dashboard/leads/status). Kept as two small functions so the page
- * doesn't need to know about the request/response shape directly.
+ * Data source for the /admin-dashboard leads table -- backed by
+ * GET /api/v1/admin/leads (app/api/v1/endpoints/admin.py), which merges the
+ * inquiry form ("form") and the Infomary chat agent ("chat") into one
+ * normalized list.
  */
 
 /**
@@ -15,6 +15,22 @@ import type { InfomaryLead } from "./types";
 export const LEAD_STATUSES = ["New", "Contacted", "Qualified", "Converted", "Not Interested"] as const;
 
 export type KnownLeadStatus = (typeof LEAD_STATUSES)[number];
+
+export function sourceLabel(source: string): string {
+  switch (source) {
+    case "form":
+      return "Inquiry form";
+    case "chat":
+      return "Infomary chat";
+    default:
+      return source;
+  }
+}
+
+/** Only "chat"-sourced leads have a backend endpoint to update their status today. */
+export function canUpdateStatus(lead: UnifiedLead): boolean {
+  return lead.source === "chat";
+}
 
 /** Maps a status onto one of the existing `.pill-*` modifiers from global.css. */
 export function statusPillClass(status: string): string {
@@ -47,7 +63,7 @@ export function formatLeadDate(value: string | null | undefined): string {
 }
 
 /** Collects the distinct non-empty values of one column, for the filter dropdowns. */
-export function distinctValues(leads: InfomaryLead[], key: keyof InfomaryLead): string[] {
+export function distinctValues(leads: UnifiedLead[], key: keyof UnifiedLead): string[] {
   const seen = new Set<string>();
   for (const lead of leads) {
     const value = String(lead[key] ?? "").trim();
@@ -57,16 +73,22 @@ export function distinctValues(leads: InfomaryLead[], key: keyof InfomaryLead): 
 }
 
 // The table/filters/sort/pagination all run client-side over one fetched
-// batch (see AdminDashboard.tsx) rather than a server-paginated view, so this
-// asks for a generously high ceiling in one shot instead of wiring up real
-// pagination the UI doesn't have.
-const FETCH_LIMIT = 1000;
+// batch (see AdminDashboard.tsx) rather than a server-paginated view. 200 is
+// the backend's own max page size (le=200 on /api/v1/admin/leads), so this
+// is the most we can pull in one shot.
+const FETCH_LIMIT = 200;
 
-export async function listLeads(): Promise<InfomaryLead[]> {
+export async function listLeads(): Promise<UnifiedLead[]> {
   const res = await adminApi.leads({ limit: FETCH_LIMIT });
-  return res.leads;
+  return res.items;
 }
 
-export async function updateLeadStatus(leadId: string, status: string): Promise<void> {
-  await adminApi.updateLeadStatus(leadId, status);
+export async function updateLeadStatus(lead: UnifiedLead, status: string): Promise<void> {
+  if (!canUpdateStatus(lead)) {
+    throw new Error("Status updates aren't supported for inquiry-form leads yet.");
+  }
+  // lead.id is prefixed ("chat:<lead_id>") to keep the two source id spaces
+  // from colliding -- the update endpoint wants the bare lead_id.
+  const rawLeadId = lead.id.startsWith("chat:") ? lead.id.slice("chat:".length) : lead.id;
+  await adminApi.updateLeadStatus(rawLeadId, status);
 }

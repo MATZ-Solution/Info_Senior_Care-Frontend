@@ -1,32 +1,34 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   LEAD_STATUSES,
+  canUpdateStatus,
   distinctValues,
   formatLeadDate,
   leadValue,
   listLeads,
+  sourceLabel,
   statusPillClass,
   updateLeadStatus,
 } from "../../lib/adminLeads";
-import type { InfomaryLead } from "../../lib/types";
+import { ApiError } from "../../lib/api";
+import type { UnifiedLead } from "../../lib/types";
 import { EmptyState, ErrorBanner, Spinner } from "../../components/Feedback";
 import LeadDetailDrawer from "./LeadDetailDrawer";
 
-type SortKey = "created_at" | "name" | "care_type" | "location" | "source" | "status";
+type SortKey = "created_at" | "name" | "facility_type" | "location" | "source" | "status";
 type SortDir = "asc" | "desc";
 
 const PAGE_SIZES = [10, 25, 50];
 
 export default function AdminDashboard() {
-  const [leads, setLeads] = useState<InfomaryLead[] | null>(null);
+  const [leads, setLeads] = useState<UnifiedLead[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [careTypeFilter, setCareTypeFilter] = useState("");
+  const [facilityTypeFilter, setFacilityTypeFilter] = useState("");
   const [sourceFilter, setSourceFilter] = useState("");
-  const [emailFilter, setEmailFilter] = useState<"" | "sent" | "unsent">("");
 
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
@@ -34,7 +36,7 @@ export default function AdminDashboard() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  const [selected, setSelected] = useState<InfomaryLead | null>(null);
+  const [selected, setSelected] = useState<UnifiedLead | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -44,9 +46,16 @@ export default function AdminDashboard() {
       .then((rows) => {
         if (!cancelled) setLeads(rows);
       })
-      .catch(() => {
+      .catch((err) => {
         if (!cancelled) {
-          setError("Could not load leads. Please try again.");
+          // /api/v1/admin/leads requires a real signed-in user -- a guest or
+          // signed-out visitor gets a 401, which reads very differently from
+          // a genuine fetch failure.
+          setError(
+            err instanceof ApiError && err.status === 401
+              ? "Sign in with a staff account to view leads."
+              : "Could not load leads. Please try again."
+          );
           setLeads([]);
         }
       });
@@ -55,7 +64,7 @@ export default function AdminDashboard() {
     };
   }, [reloadKey]);
 
-  const careTypes = useMemo(() => (leads ? distinctValues(leads, "care_type") : []), [leads]);
+  const facilityTypes = useMemo(() => (leads ? distinctValues(leads, "facility_type") : []), [leads]);
   const sources = useMemo(() => (leads ? distinctValues(leads, "source") : []), [leads]);
   const statuses = useMemo(() => {
     const fromData = leads ? distinctValues(leads, "status") : [];
@@ -67,19 +76,17 @@ export default function AdminDashboard() {
     const term = search.trim().toLowerCase();
     return leads.filter((lead) => {
       if (statusFilter && lead.status !== statusFilter) return false;
-      if (careTypeFilter && lead.care_type !== careTypeFilter) return false;
-      if (sourceFilter && (lead.source ?? "") !== sourceFilter) return false;
-      if (emailFilter === "sent" && !lead.email_sent) return false;
-      if (emailFilter === "unsent" && lead.email_sent) return false;
+      if (facilityTypeFilter && lead.facility_type !== facilityTypeFilter) return false;
+      if (sourceFilter && lead.source !== sourceFilter) return false;
       if (!term) return true;
       // Free-text search spans the columns an admin would actually look someone
-      // up by, plus the notes field where context tends to live.
-      return [lead.name, lead.email, lead.phone, lead.location, lead.care_need, lead.care_type, lead.source, lead.notes]
+      // up by.
+      return [lead.name, lead.email, lead.phone, lead.location, lead.interest, lead.facility_name, lead.facility_type, lead.source]
         .join(" ")
         .toLowerCase()
         .includes(term);
     });
-  }, [leads, search, statusFilter, careTypeFilter, sourceFilter, emailFilter]);
+  }, [leads, search, statusFilter, facilityTypeFilter, sourceFilter]);
 
   const sorted = useMemo(() => {
     const rows = [...filtered];
@@ -103,7 +110,7 @@ export default function AdminDashboard() {
   // Any filter change can shrink the result set below the current page.
   useEffect(() => {
     setPage(1);
-  }, [search, statusFilter, careTypeFilter, sourceFilter, emailFilter, pageSize]);
+  }, [search, statusFilter, facilityTypeFilter, sourceFilter, pageSize]);
 
   const stats = useMemo(() => {
     const rows = leads ?? [];
@@ -113,7 +120,8 @@ export default function AdminDashboard() {
       newLeads: byStatus("new"),
       contacted: byStatus("contacted"),
       converted: byStatus("converted"),
-      emailsSent: rows.filter((l) => l.email_sent).length,
+      form: rows.filter((l) => l.source === "form").length,
+      chat: rows.filter((l) => l.source === "chat").length,
     };
   }, [leads]);
 
@@ -126,13 +134,18 @@ export default function AdminDashboard() {
     }
   }
 
-  function handleStatusChange(lead: InfomaryLead, status: string) {
+  async function handleStatusChange(lead: UnifiedLead, status: string) {
+    if (!canUpdateStatus(lead)) return; // the status control is disabled for these -- see LeadDetailDrawer
     setLeads((prev) => (prev ? prev.map((l) => (l === lead ? { ...l, status } : l)) : prev));
     setSelected((prev) => (prev === lead ? { ...prev, status } : prev));
-    if (lead.lead_id) void updateLeadStatus(lead.lead_id, status);
+    try {
+      await updateLeadStatus(lead, status);
+    } catch {
+      setReloadKey((k) => k + 1); // revert to server truth on failure
+    }
   }
 
-  const filtersActive = Boolean(search || statusFilter || careTypeFilter || sourceFilter || emailFilter);
+  const filtersActive = Boolean(search || statusFilter || facilityTypeFilter || sourceFilter);
 
   return (
     <div className="admin-shell">
@@ -162,13 +175,14 @@ export default function AdminDashboard() {
           <Stat label="New" value={leads ? stats.newLeads : "…"} accent={Boolean(leads && stats.newLeads)} />
           <Stat label="Contacted" value={leads ? stats.contacted : "…"} />
           <Stat label="Converted" value={leads ? stats.converted : "…"} />
-          <Stat label="Emails sent" value={leads ? `${stats.emailsSent} / ${stats.total}` : "…"} />
+          <Stat label="From inquiry form" value={leads ? stats.form : "…"} />
+          <Stat label="From Infomary chat" value={leads ? stats.chat : "…"} />
         </div>
 
         <div className="admin-toolbar">
           <input
             className="admin-input admin-search"
-            placeholder="Search name, email, phone, location, source, notes…"
+            placeholder="Search name, email, phone, location, interest, facility…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             aria-label="Search leads"
@@ -181,9 +195,9 @@ export default function AdminDashboard() {
               </option>
             ))}
           </select>
-          <select className="admin-input" value={careTypeFilter} onChange={(e) => setCareTypeFilter(e.target.value)} aria-label="Filter by care type">
-            <option value="">All care types</option>
-            {careTypes.map((t) => (
+          <select className="admin-input" value={facilityTypeFilter} onChange={(e) => setFacilityTypeFilter(e.target.value)} aria-label="Filter by facility type">
+            <option value="">All facility types</option>
+            {facilityTypes.map((t) => (
               <option key={t} value={t}>
                 {t}
               </option>
@@ -193,19 +207,9 @@ export default function AdminDashboard() {
             <option value="">All sources</option>
             {sources.map((s) => (
               <option key={s} value={s}>
-                {s}
+                {sourceLabel(s)}
               </option>
             ))}
-          </select>
-          <select
-            className="admin-input"
-            value={emailFilter}
-            onChange={(e) => setEmailFilter(e.target.value as "" | "sent" | "unsent")}
-            aria-label="Filter by email status"
-          >
-            <option value="">Email: any</option>
-            <option value="sent">Email sent</option>
-            <option value="unsent">Email not sent</option>
           </select>
           {filtersActive && (
             <button
@@ -213,9 +217,8 @@ export default function AdminDashboard() {
               onClick={() => {
                 setSearch("");
                 setStatusFilter("");
-                setCareTypeFilter("");
+                setFacilityTypeFilter("");
                 setSourceFilter("");
-                setEmailFilter("");
               }}
             >
               Clear
@@ -232,7 +235,7 @@ export default function AdminDashboard() {
         {leads !== null && sorted.length === 0 && (
           <EmptyState
             title={filtersActive ? "No leads match these filters" : "No leads yet"}
-            hint={filtersActive ? "Try clearing the search or filters." : "New Infomary submissions will appear here."}
+            hint={filtersActive ? "Try clearing the search or filters." : "New inquiries and Infomary conversations will appear here."}
           />
         )}
 
@@ -244,20 +247,18 @@ export default function AdminDashboard() {
                   <tr>
                     <SortableTh label="Received" k="created_at" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                     <SortableTh label="Lead" k="name" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} className="col-lead" />
-                    <th className="col-care-need">Care need</th>
-                    <SortableTh label="Care type" k="care_type" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                    <th className="col-care-need">Interest</th>
+                    <SortableTh label="Facility / type" k="facility_type" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                     <SortableTh label="Location" k="location" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
-                    <th>Age / Gender</th>
                     <th>Budget</th>
                     <SortableTh label="Source" k="source" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                     <SortableTh label="Status" k="status" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
-                    <th>Email</th>
                     <th aria-label="Actions" />
                   </tr>
                 </thead>
                 <tbody>
-                  {pageRows.map((lead, i) => (
-                    <tr key={lead.lead_id ?? `${lead.email}-${i}`} onClick={() => setSelected(lead)} className="data-row">
+                  {pageRows.map((lead) => (
+                    <tr key={lead.id} onClick={() => setSelected(lead)} className="data-row">
                       <td className="nowrap muted-cell">{formatLeadDate(lead.created_at)}</td>
                       <td>
                         <div className="cell-strong">{leadValue(lead.name)}</div>
@@ -265,24 +266,21 @@ export default function AdminDashboard() {
                         <div className="cell-sub">{leadValue(lead.phone)}</div>
                       </td>
                       <td className="col-care-need">
-                        <div className="cell-clamp" title={lead.care_need}>
-                          {leadValue(lead.care_need)}
+                        <div className="cell-clamp" title={lead.interest ?? undefined}>
+                          {leadValue(lead.interest)}
                         </div>
                       </td>
-                      <td className="nowrap">{leadValue(lead.care_type)}</td>
-                      <td className="nowrap">{leadValue(lead.location)}</td>
-                      <td className="nowrap muted-cell">
-                        {leadValue(lead.age)} · {leadValue(lead.gender)}
+                      <td className="nowrap">
+                        {lead.facility_name ? `${lead.facility_name} — ` : ""}
+                        {leadValue(lead.facility_type)}
                       </td>
+                      <td className="nowrap">{leadValue(lead.location)}</td>
                       <td className="nowrap">{leadValue(lead.budget)}</td>
-                      <td className="nowrap">{leadValue(lead.source)}</td>
+                      <td className="nowrap">
+                        <span className={`pill ${lead.source === "chat" ? "pill-teal" : "pill-blue"}`}>{sourceLabel(lead.source)}</span>
+                      </td>
                       <td>
                         <span className={statusPillClass(lead.status)}>{leadValue(lead.status)}</span>
-                      </td>
-                      <td>
-                        <span className={lead.email_sent ? "email-dot sent" : "email-dot"} title={lead.email_sent ? "Email sent" : "Not sent"}>
-                          {lead.email_sent ? "✓ Sent" : "Not sent"}
-                        </span>
                       </td>
                       <td className="nowrap">
                         <button
@@ -337,7 +335,7 @@ export default function AdminDashboard() {
         <LeadDetailDrawer
           lead={selected}
           statuses={statuses}
-          onStatusChange={(status) => handleStatusChange(selected, status)}
+          onStatusChange={(status) => void handleStatusChange(selected, status)}
           onClose={() => setSelected(null)}
         />
       )}
@@ -380,27 +378,22 @@ function SortableTh({
   );
 }
 
-const CSV_COLUMNS: (keyof InfomaryLead)[] = [
+const CSV_COLUMNS: (keyof UnifiedLead)[] = [
   "created_at",
+  "source",
   "name",
   "email",
   "phone",
-  "care_need",
-  "care_type",
+  "interest",
+  "facility_name",
+  "facility_type",
   "location",
-  "age",
-  "gender",
-  "living_arrangement",
-  "conditions",
-  "insurance",
   "budget",
-  "notes",
-  "source",
+  "contact_time_preference",
   "status",
-  "email_sent",
 ];
 
-function exportCsv(rows: InfomaryLead[]) {
+function exportCsv(rows: UnifiedLead[]) {
   const escape = (value: unknown) => `"${String(value ?? "").replace(/"/g, '""')}"`;
   const csv = [
     CSV_COLUMNS.join(","),

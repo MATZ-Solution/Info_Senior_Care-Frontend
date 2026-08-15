@@ -268,39 +268,50 @@ export interface GenerateTitleResponse {
   description: string;
 }
 
-// ---- Infomary leads (admin dashboard) ----
+// ---- Admin leads (GET /api/v1/admin/leads -- app/api/v1/endpoints/admin.py) ----
 
 /**
- * One row of the `infomary_leads` table (GET /dashboard/leads, root-level,
- * unversioned -- see database.py::get_all_leads). Every text column is
- * `default ''` in Postgres, so these arrive as empty strings rather than
- * null -- render them through `leadValue()` so blanks show as an em dash
- * instead of nothing.
+ * One normalized lead, merged from BOTH backend sources into a single flat
+ * shape server-side:
+ *   - "form" -- the inquiry ("Request info") form, from the `inquiries` table
+ *   - "chat" -- the Infomary chat agent's save_lead tool, from `infomary_leads`
+ *
+ * `id` is globally unique and prefixed by source ("form:<uuid>" / "chat:<lead_id>")
+ * so the two id spaces never collide -- don't assume it's a bare UUID.
+ *
+ * Whatever doesn't fit the common shape (age/gender/conditions/notes for chat
+ * leads; facility_id/state/city for form leads) lives in `details` instead of
+ * being lost.
  */
-export interface InfomaryLead {
-  id: number; // SERIAL primary key -- internal only, not stable across re-imports
-  lead_id: string; // the actual business identifier -- use this for status updates and as the row key
-  session_id: string;
-  created_at?: string;
-  updated_at?: string;
-  name: string;
-  email: string;
-  phone: string;
-  care_need: string;
-  care_type: string;
-  location: string;
-  age: string;
-  gender: string;
-  living_arrangement: string;
-  conditions: string;
-  insurance: string;
-  budget: string;
-  notes: string;
-  /** Where the lead came from (chat, assessment, inquiry form…). Optional: older rows predate the column. */
-  source?: string;
-  /** Free text in the DB (defaults to 'New'); the UI styles the known ones. */
+export interface UnifiedLead {
+  id: string;
+  source: "form" | "chat" | string;
+
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+
+  facility_name?: string | null; // form leads only
+  facility_type?: string | null; // form: category | chat: care_type
+  interest?: string | null; // what they want (form: message | chat: care_need)
+  location?: string | null; // chat leads only
+  budget?: string | null;
+  contact_time_preference?: string | null; // form leads (chat: not collected)
+
   status: string;
-  email_sent: boolean;
+  created_at?: string | null;
+
+  details: Record<string, unknown>;
+}
+
+export interface UnifiedLeadsPage {
+  items: UnifiedLead[];
+  limit: number;
+  offset: number;
+  total: number; // combined count across both sources
+  total_form: number;
+  total_chat: number;
+  has_more: boolean;
 }
 
 // ---- Dashboard stats (GET /dashboard/stats, root-level, unversioned) ----

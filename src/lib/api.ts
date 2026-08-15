@@ -12,7 +12,6 @@ import type {
   GenerateTitleResponse,
   GuestSessionOut,
   HealthResponse,
-  InfomaryLead,
   InquiryCreate,
   InquiryOut,
   MessageResponse,
@@ -24,6 +23,7 @@ import type {
   ResourceListItem,
   ResourceOut,
   SupabaseAuthResponse,
+  UnifiedLeadsPage,
   SyncProfileResponse,
 } from "./types";
 
@@ -202,14 +202,24 @@ export const chatApi = {
     request<{ status: string }>("/delete-session", { method: "POST", auth: false, body: { session_id: sessionId } }),
 };
 
-// ===== Part 14: Dashboard (internal/admin, REST, root-level, unversioned) =====
-// No bearer-token gate on these routes server-side (see app/main.py) -- the
-// backend leaves access control to whatever sits in front of the admin UI.
+// ===== Admin =====
 
 export const adminApi = {
+  // Root-level, unversioned, unauthenticated (see app/main.py) -- the
+  // backend leaves access control to whatever sits in front of the admin UI.
   stats: () => request<DashboardStats>("/dashboard/stats", { auth: false }),
-  leads: (params?: { limit?: number; offset?: number; status?: string }) =>
-    request<{ leads: InfomaryLead[] }>("/dashboard/leads", { query: params, auth: false }),
+
+  // GET /api/v1/admin/leads (app/api/v1/endpoints/admin.py) -- merges
+  // inquiries (source: "form") and infomary_leads (source: "chat") into one
+  // normalized, date-sorted list. Requires a real signed-in user
+  // (require_user) -- guests get a 401 here.
+  leads: (params?: { limit?: number; offset?: number; source?: string; status?: string }) =>
+    request<UnifiedLeadsPage>("/api/v1/admin/leads", { query: params }),
+
+  // POST /dashboard/leads/status -- root-level, unversioned, unauthenticated.
+  // Only updates `infomary_leads` rows (matched by lead_id), i.e. only
+  // "chat"-sourced leads. There is no endpoint yet to update an inquiry's
+  // ("form"-sourced lead's) status -- see app/api/v1/endpoints/inquiries.py.
   updateLeadStatus: (leadId: string, status: string) =>
     request<{ status: string }>("/dashboard/leads/status", {
       method: "POST",
