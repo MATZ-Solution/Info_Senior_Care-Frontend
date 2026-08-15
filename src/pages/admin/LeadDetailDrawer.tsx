@@ -42,7 +42,9 @@ export default function LeadDetailDrawer({
         <header className="admin-drawer-head">
           <div style={{ minWidth: 0 }}>
             <h2 className="admin-drawer-title">{leadValue(lead.name)}</h2>
-            <div className="admin-drawer-sub">Received {formatLeadDate(lead.created_at)}</div>
+            <div className="admin-drawer-sub">
+              Received {formatLeadDate(lead.created_at)} · via {leadValue(lead.source)}
+            </div>
           </div>
           <button className="admin-drawer-close" onClick={onClose} aria-label="Close">
             ✕

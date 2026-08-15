@@ -296,6 +296,8 @@ export interface InfomaryLead {
   insurance: string;
   budget: string;
   notes: string;
+  /** Where the lead came from (chat, assessment, inquiry form…). Optional: older rows predate the column. */
+  source?: string;
   /** Free text in the DB (defaults to 'New'); the UI styles the known ones. */
   status: string;
   email_sent: boolean;

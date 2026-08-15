@@ -12,7 +12,7 @@ import type { InfomaryLead } from "../../lib/types";
 import { EmptyState, ErrorBanner, Spinner } from "../../components/Feedback";
 import LeadDetailDrawer from "./LeadDetailDrawer";
 
-type SortKey = "created_at" | "name" | "care_type" | "location" | "status";
+type SortKey = "created_at" | "name" | "care_type" | "location" | "source" | "status";
 type SortDir = "asc" | "desc";
 
 const PAGE_SIZES = [10, 25, 50];
@@ -25,6 +25,7 @@ export default function AdminDashboard() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [careTypeFilter, setCareTypeFilter] = useState("");
+  const [sourceFilter, setSourceFilter] = useState("");
   const [emailFilter, setEmailFilter] = useState<"" | "sent" | "unsent">("");
 
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
@@ -55,6 +56,7 @@ export default function AdminDashboard() {
   }, [reloadKey]);
 
   const careTypes = useMemo(() => (leads ? distinctValues(leads, "care_type") : []), [leads]);
+  const sources = useMemo(() => (leads ? distinctValues(leads, "source") : []), [leads]);
   const statuses = useMemo(() => {
     const fromData = leads ? distinctValues(leads, "status") : [];
     return Array.from(new Set<string>([...LEAD_STATUSES, ...fromData]));
@@ -66,17 +68,18 @@ export default function AdminDashboard() {
     return leads.filter((lead) => {
       if (statusFilter && lead.status !== statusFilter) return false;
       if (careTypeFilter && lead.care_type !== careTypeFilter) return false;
+      if (sourceFilter && (lead.source ?? "") !== sourceFilter) return false;
       if (emailFilter === "sent" && !lead.email_sent) return false;
       if (emailFilter === "unsent" && lead.email_sent) return false;
       if (!term) return true;
       // Free-text search spans the columns an admin would actually look someone
       // up by, plus the notes field where context tends to live.
-      return [lead.name, lead.email, lead.phone, lead.location, lead.care_need, lead.care_type, lead.notes]
+      return [lead.name, lead.email, lead.phone, lead.location, lead.care_need, lead.care_type, lead.source, lead.notes]
         .join(" ")
         .toLowerCase()
         .includes(term);
     });
-  }, [leads, search, statusFilter, careTypeFilter, emailFilter]);
+  }, [leads, search, statusFilter, careTypeFilter, sourceFilter, emailFilter]);
 
   const sorted = useMemo(() => {
     const rows = [...filtered];
@@ -100,7 +103,7 @@ export default function AdminDashboard() {
   // Any filter change can shrink the result set below the current page.
   useEffect(() => {
     setPage(1);
-  }, [search, statusFilter, careTypeFilter, emailFilter, pageSize]);
+  }, [search, statusFilter, careTypeFilter, sourceFilter, emailFilter, pageSize]);
 
   const stats = useMemo(() => {
     const rows = leads ?? [];
@@ -129,7 +132,7 @@ export default function AdminDashboard() {
     if (lead.lead_id) void updateLeadStatus(lead.lead_id, status);
   }
 
-  const filtersActive = Boolean(search || statusFilter || careTypeFilter || emailFilter);
+  const filtersActive = Boolean(search || statusFilter || careTypeFilter || sourceFilter || emailFilter);
 
   return (
     <div className="admin-shell">
@@ -165,7 +168,7 @@ export default function AdminDashboard() {
         <div className="admin-toolbar">
           <input
             className="admin-input admin-search"
-            placeholder="Search name, email, phone, location, notes…"
+            placeholder="Search name, email, phone, location, source, notes…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             aria-label="Search leads"
@@ -186,6 +189,14 @@ export default function AdminDashboard() {
               </option>
             ))}
           </select>
+          <select className="admin-input" value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value)} aria-label="Filter by source">
+            <option value="">All sources</option>
+            {sources.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
           <select
             className="admin-input"
             value={emailFilter}
@@ -203,6 +214,7 @@ export default function AdminDashboard() {
                 setSearch("");
                 setStatusFilter("");
                 setCareTypeFilter("");
+                setSourceFilter("");
                 setEmailFilter("");
               }}
             >
@@ -237,6 +249,7 @@ export default function AdminDashboard() {
                     <SortableTh label="Location" k="location" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                     <th>Age / Gender</th>
                     <th>Budget</th>
+                    <SortableTh label="Source" k="source" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                     <SortableTh label="Status" k="status" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                     <th>Email</th>
                     <th aria-label="Actions" />
@@ -262,6 +275,7 @@ export default function AdminDashboard() {
                         {leadValue(lead.age)} · {leadValue(lead.gender)}
                       </td>
                       <td className="nowrap">{leadValue(lead.budget)}</td>
+                      <td className="nowrap">{leadValue(lead.source)}</td>
                       <td>
                         <span className={statusPillClass(lead.status)}>{leadValue(lead.status)}</span>
                       </td>
@@ -381,6 +395,7 @@ const CSV_COLUMNS: (keyof InfomaryLead)[] = [
   "insurance",
   "budget",
   "notes",
+  "source",
   "status",
   "email_sent",
 ];
